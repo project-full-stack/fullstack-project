@@ -2,7 +2,7 @@ export interface Resource {
   id: number;
   name: string;
   type: 'room' | 'equipment';
-  is_active: boolean;
+  isActive: boolean; 
   description?: string;
 }
 
