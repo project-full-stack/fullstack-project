@@ -78,3 +78,32 @@ app.get('/bookings', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+// 5. Get Bookings by Student ID Endpoint (ดึงประวัติการจองเฉพาะของนักศึกษาคนนั้นๆ)
+app.get('/bookings/student/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    
+    // ค้นหาข้อมูลการจองและเชื่อมโยง (Join) กับตาราง resources เพื่อเอาชื่อห้อง/อุปกรณ์มาแสดงด้วย
+    const studentBookings = await db
+      .select({
+        id: bookings.id,
+        resourceId: bookings.resourceId,
+        resourceName: resources.name,
+        resourceType: resources.type,
+        studentName: bookings.studentName,
+        studentId: bookings.studentId,
+        status: bookings.status,
+        bookingDate: bookings.bookingDate,
+        createdAt: bookings.createdAt,
+      })
+      .from(bookings)
+      .leftJoin(resources, eq(bookings.resourceId, resources.id))
+      .where(eq(bookings.studentId, studentId));
+
+    res.json(studentBookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch student bookings' });
+  }
+});
