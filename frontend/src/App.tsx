@@ -1,0 +1,147 @@
+import React, { useState, useEffect } from 'react';
+import { Resource, Language } from './types';
+import { i18n } from './data/i18n';
+
+export default function App() {
+  const API_URL = 'http://localhost:8000';
+  
+  // States
+  const [lang, setLang] = useState<Language>('th');
+  const [filter, setFilter] = useState<string>('');
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const t = i18n[lang];
+
+  // 1. เช็กสถานะ Backend / Health Check
+  useEffect(() => {
+    fetch(`${API_URL}/health`)
+      .then((res) => res.json())
+      .then((data) => setIsOnline(data.ok))
+      .catch(() => setIsOnline(false));
+  }, []);
+
+  // 2. ดึงข้อมูลทรัพยากร (ห้อง / อุปกรณ์)
+  useEffect(() => {
+    setLoading(true);
+    const url = filter ? `${API_URL}/resources?type=${filter}` : `${API_URL}/resources`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        setResources(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setResources([]);
+        setLoading(false);
+      });
+  }, [filter]);
+
+  return (
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
+      {/* Header */}
+      <header className="bg-linear-to-r from-purple-900 to-purple-600 text-white px-10 py-5 flex justify-between items-center shadow-lg">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          {t.title}
+        </h2>
+        <div className="flex items-center gap-4">
+          <span className={`px-4 py-1.5 rounded-full text-sm font-medium shadow-sm ${
+            isOnline === null 
+              ? 'bg-slate-200 text-slate-600' 
+              : isOnline 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {isOnline === null ? t.loading : isOnline ? t.online : t.offline}
+          </span>
+          
+          {/* Lang Toggle */}
+          <div className="bg-white/20 p-1 rounded-full flex gap-1">
+            <button 
+              onClick={() => setLang('th')} 
+              className={`px-3 py-1 rounded-full text-sm font-medium transition ${lang === 'th' ? 'bg-white text-purple-900 shadow' : 'text-white'}`}
+            >
+              TH
+            </button>
+            <button 
+              onClick={() => setLang('en')} 
+              className={`px-3 py-1 rounded-full text-sm font-medium transition ${lang === 'en' ? 'bg-white text-purple-900 shadow' : 'text-white'}`}
+            >
+              EN
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Filter Controls */}
+      <div className="bg-white px-10 py-4 border-b border-slate-200 flex gap-3 shadow-sm">
+        <button 
+          onClick={() => setFilter('')} 
+          className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === '' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+        >
+          {t.btnAll}
+        </button>
+        <button 
+          onClick={() => setFilter('room')} 
+          className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === 'room' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+        >
+          {t.btnRoom}
+        </button>
+        <button 
+          onClick={() => setFilter('equipment')} 
+          className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === 'equipment' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+        >
+          {t.btnEquip}
+        </button>
+      </div>
+
+      {/* Main Content Grid */}
+      <main className="max-w-7xl mx-auto p-10">
+        {loading ? (
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm text-slate-500 text-lg">
+            {t.loading}
+          </div>
+        ) : resources.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm text-slate-500 text-lg">
+            {t.empty}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {resources.map((item) => {
+              const isRoom = item.type?.toLowerCase() === 'room';
+              const icon = isRoom ? '🚪' : '💻';
+              const displayType = isRoom ? t.room : t.equipment;
+
+              return (
+                <div key={item.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1">
+                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-purple-800 to-purple-400"></div>
+                  
+                  <h3 className="text-lg font-semibold mb-4 text-slate-900 flex items-center gap-2">
+                    {icon} {item.name || `Resource #${item.id}`}
+                  </h3>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">{t.type}:</span>
+                      <span className="text-slate-700 font-semibold capitalize">{displayType}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">{t.status}:</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        item.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {item.is_active ? t.available : t.unavailable}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
