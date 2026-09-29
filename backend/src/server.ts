@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { db } from './db';
-import { resources, bookings } from './db/schema'; // เพิ่ม bookings เข้ามาตรงนี้
+import { resources, bookings } from './db/schema';
 import { eq } from 'drizzle-orm';
 
 const app = express();
@@ -10,7 +10,7 @@ const PORT = 8000;
 app.use(cors());
 app.use(express.json());
 
-// 1. Health Check Endpoint (ให้หน้าเว็บเช็กว่าระบบออนไลน์ไหม)
+// 1. Health Check Endpoint
 app.get('/health', (req, res) => {
   res.json({ ok: true, message: 'Backend is running smoothly' });
 });
@@ -39,12 +39,10 @@ app.post('/bookings', async (req, res) => {
   try {
     const { resourceId, studentName, studentId, bookingDate } = req.body;
 
-    // ตรวจสอบข้อมูลเบื้องต้นว่ามาครบไหม
     if (!resourceId || !studentName || !studentId || !bookingDate) {
       return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
     }
 
-    // บันทึกลงฐานข้อมูลผ่าน Drizzle ORM
     const newBooking = await db.insert(bookings).values({
       resourceId: Number(resourceId),
       studentName,
@@ -64,7 +62,7 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// 4. Get Bookings Endpoint (ดึงรายการจองทั้งหมดมาเช็กดู)
+// 4. Get Bookings Endpoint
 app.get('/bookings', async (req, res) => {
   try {
     const result = await db.select().from(bookings);
@@ -75,21 +73,17 @@ app.get('/bookings', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
-
-// 5. Get Bookings by Student ID Endpoint (ดึงประวัติการจองเฉพาะของนักศึกษาคนนั้นๆ)
+// 5. Get Bookings by Student ID Endpoint (รองรับชื่อ 2 ภาษา th/en)
 app.get('/bookings/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
     
-    // ค้นหาข้อมูลการจองและเชื่อมโยง (Join) กับตาราง resources เพื่อเอาชื่อห้อง/อุปกรณ์มาแสดงด้วย
     const studentBookings = await db
       .select({
         id: bookings.id,
         resourceId: bookings.resourceId,
-        resourceName: resources.name,
+        resourceNameTh: resources.nameTh, // ✅ ดึงชื่อไทย
+        resourceNameEn: resources.nameEn, // ✅ ดึงชื่ออังกฤษ
         resourceType: resources.type,
         studentName: bookings.studentName,
         studentId: bookings.studentId,
@@ -106,4 +100,8 @@ app.get('/bookings/student/:studentId', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch student bookings' });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
