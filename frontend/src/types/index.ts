@@ -1,6 +1,7 @@
 export interface Resource {
   id: number;
-  name: string;
+  nameTh: string; 
+  nameEn: string; 
   type: 'room' | 'equipment';
   isActive: boolean; 
   description?: string;

@@ -2,7 +2,8 @@ import { pgTable, serial, text, boolean, timestamp } from 'drizzle-orm/pg-core';
 
 export const resources = pgTable('resources', {
   id: serial('id').primaryKey(),
-  name: text('name').notNull(),
+  nameTh: text('name_th').notNull(),
+  nameEn: text('name_en').notNull(),
   type: text('type').notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
