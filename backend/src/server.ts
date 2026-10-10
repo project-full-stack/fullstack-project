@@ -15,7 +15,7 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, message: 'Backend is running smoothly' });
 });
 
-// 2. Get Resources Endpoint (ดึงข้อมูลห้อง/อุปกรณ์ ทั้งหมด หรือแยกตามประเภท)
+// 2. Get Resources Endpoint
 app.get('/resources', async (req, res) => {
   try {
     const { type } = req.query;
@@ -34,20 +34,28 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint (รับข้อมูลการจองจากหน้าเว็บ)
+// 3. Create Booking Endpoint (รองรับ endTime ที่ส่งมาจาก Frontend)
 app.post('/bookings', async (req, res) => {
   try {
-    const { resourceId, studentName, studentId, bookingDate } = req.body;
+    const { resourceId, studentName, studentId, bookingDate, endTime } = req.body;
 
-    if (!resourceId || !studentName || !studentId || !bookingDate) {
-      return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
+    if (!resourceId || !studentName || !studentId || !bookingDate || !endTime) {
+      return res.status(400).json({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
+    }
+
+    const bookingDateTime = new Date(bookingDate);
+    const now = new Date();
+
+    if (bookingDateTime < now) {
+      return res.status(400).json({ success: false, error: 'ไม่สามารถจองวันที่หรือเวลาที่ผ่านไปแล้วได้' });
     }
 
     const newBooking = await db.insert(bookings).values({
       resourceId: Number(resourceId),
       studentName,
       studentId,
-      bookingDate: new Date(bookingDate),
+      bookingDate: bookingDateTime,
+      endTime: endTime, // ✅ บันทึกเวลาสิ้นสุดลงฐานข้อมูล
       status: 'pending',
     }).returning();
 
@@ -58,7 +66,7 @@ app.post('/bookings', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการจอง' });
+    res.status(500).json({ success: false, error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการจอง' });
   }
 });
 
@@ -73,7 +81,7 @@ app.get('/bookings', async (req, res) => {
   }
 });
 
-// 5. Get Bookings by Student ID Endpoint (รองรับชื่อ 2 ภาษา th/en)
+// 5. Get Bookings by Student ID Endpoint
 app.get('/bookings/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -82,13 +90,14 @@ app.get('/bookings/student/:studentId', async (req, res) => {
       .select({
         id: bookings.id,
         resourceId: bookings.resourceId,
-        resourceNameTh: resources.nameTh, // ✅ ดึงชื่อไทย
-        resourceNameEn: resources.nameEn, // ✅ ดึงชื่ออังกฤษ
+        resourceNameTh: resources.nameTh,
+        resourceNameEn: resources.nameEn,
         resourceType: resources.type,
         studentName: bookings.studentName,
         studentId: bookings.studentId,
         status: bookings.status,
         bookingDate: bookings.bookingDate,
+        endTime: bookings.endTime, // ✅ ส่งฟิลด์ endTime กลับไปด้วย
         createdAt: bookings.createdAt,
       })
       .from(bookings)
