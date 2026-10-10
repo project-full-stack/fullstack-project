@@ -21,14 +21,27 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchId.trim()) return;
+    setErrorMsg('');
+
+    const trimmedId = searchId.trim();
+
+    // ตรวจสอบความยาวรหัสนักศึกษาต้องเป็นตัวเลข 9 หลัก
+    if (trimmedId.length !== 9 || !/^\d+$/.test(trimmedId)) {
+      setErrorMsg(
+        lang === 'th' 
+          ? 'โปรดกรอกรหัสนักศึกษาให้ถูกต้อง (ต้องเป็นตัวเลข 9 หลัก)' 
+          : 'Please enter a valid Student ID (must be exactly 9 digits)'
+      );
+      return;
+    }
 
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/bookings/student/${searchId.trim()}`);
+      const response = await fetch(`${apiUrl}/bookings/student/${trimmedId}`);
       const data = await response.json();
       if (response.ok) {
         setBookings(data);
@@ -47,35 +60,51 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6">
-        <h2 className="text-xl font-bold text-slate-800 mb-2">
-          {lang === 'th' ? '🔍 ค้นหาประวัติการจองของฉัน' : '🔍 Search My Bookings'}
+        <h2 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2.5">
+          <img src="/images/search.png" alt="Search" className="w-5 h-5 object-contain" />
+          {lang === 'th' ? 'ค้นหาประวัติการจองของฉัน' : 'Search My Bookings'}
         </h2>
         <p className="text-sm text-slate-500 mb-4">
           {lang === 'th' ? 'กรอกรหัสนักศึกษาของคุณเพื่อตรวจสอบรายการที่เคยจองไว้' : 'Enter your student ID to check your booking history.'}
         </p>
 
-        <form onSubmit={handleSearch} className="flex gap-3">
-          <input
-            type="text"
-            placeholder={lang === 'th' ? 'กรอกรหัสนักศึกษา เช่น 660615026' : 'Enter Student ID e.g. 660615026'}
-            value={searchId}
-            onChange={(e) => setSearchId(e.target.value)}
-            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-medium transition-colors shadow-sm text-sm"
-          >
-            {loading ? (lang === 'th' ? 'กำลังค้นหา...' : 'Searching...') : (lang === 'th' ? 'ค้นหา' : 'Search')}
-          </button>
+        <form onSubmit={handleSearch} className="flex flex-col gap-2">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              maxLength={9}
+              placeholder={lang === 'th' ? 'กรอกรหัสนักศึกษา 9 หลัก เช่น 660610000' : 'Enter 9-digit Student ID e.g. 660610000'}
+              value={searchId}
+              onChange={(e) => {
+                setSearchId(e.target.value);
+                if (errorMsg) setErrorMsg('');
+              }}
+              className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1A237E] text-sm"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-[#1A237E] hover:bg-[#303F9F] text-white px-6 py-3 rounded-2xl font-medium transition-colors shadow-sm text-sm"
+            >
+              {loading ? (lang === 'th' ? 'กำลังค้นหา...' : 'Searching...') : (lang === 'th' ? 'ค้นหา' : 'Search')}
+            </button>
+          </div>
+          
+          {/* ข้อความแจ้งเตือนเมื่อกรอกไม่ครบพร้อมไอคอนเตือน */}
+          {errorMsg && (
+            <p className="text-rose-500 text-xs font-medium mt-1 px-1 flex items-center gap-1.5">
+              <img src="/images/warning.png" alt="Warning" className="w-4 h-4 object-contain" />
+              {errorMsg}
+            </p>
+          )}
         </form>
       </div>
 
-      {searched && (
+      {searched && !errorMsg && (
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">
-            {lang === 'th' ? `📋 ผลการค้นหาสำหรับรหัส: ${searchId}` : `📋 Search results for ID: ${searchId}`}
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2.5">
+            <img src="/images/results.png" alt="Results" className="w-5 h-5 object-contain" />
+            {lang === 'th' ? `ผลการค้นหาสำหรับรหัส: ${searchId}` : `Search results for ID: ${searchId}`}
           </h3>
           
           {bookings.length === 0 ? (

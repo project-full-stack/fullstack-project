@@ -11,56 +11,73 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setActiveTab, isOnline }) => {
-  const t = i18n[lang];
-
   return (
-    <header className="bg-linear-to-r from-purple-900 to-purple-600 text-white px-6 md:px-10 py-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg sticky top-0 z-40">
-      <h2 className="text-xl font-semibold flex items-center gap-2">
-        {t.title}
-      </h2>
+    <header className="bg-[#1A237E] text-white px-6 md:px-10 py-4 flex flex-col lg:flex-row justify-between items-center gap-4 shadow-md sticky top-0 z-40">
+      {/* ชื่อระบบ */}
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg md:text-xl font-bold tracking-wide whitespace-nowrap">
+          {lang === 'th' ? 'ระบบจองห้องและอุปกรณ์' : 'Room & Equipment Booking'}
+        </h2>
+      </div>
 
       {/* เมนูสลับหน้า (Tabs) */}
       <div className="flex bg-white/10 p-1 rounded-full gap-1">
         <button
           onClick={() => setActiveTab('resources')}
-          className={`px-5 py-1.5 rounded-full text-sm font-medium transition ${
-            activeTab === 'resources' ? 'bg-white text-purple-900 shadow' : 'text-white hover:bg-white/10'
+          className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition ${
+            activeTab === 'resources' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
           }`}
         >
-          {lang === 'th' ? '📋 ทรัพยากรทั้งหมด' : '📋 All Resources'}
+          <img 
+            src="/images/resources.png" 
+            alt="Resources" 
+            className={`w-4 h-4 object-contain ${activeTab === 'resources' ? '' : 'brightness-0 invert'}`}
+          />
+          {lang === 'th' ? 'ทรัพยากรทั้งหมด' : 'All Resources'}
         </button>
+
         <button
           onClick={() => setActiveTab('myBookings')}
-          className={`px-5 py-1.5 rounded-full text-sm font-medium transition ${
-            activeTab === 'myBookings' ? 'bg-white text-purple-900 shadow' : 'text-white hover:bg-white/10'
+          className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition ${
+            activeTab === 'myBookings' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
           }`}
         >
-          {lang === 'th' ? '👤 ประวัติการจองของฉัน' : '👤 My Bookings'}
+          <img 
+            src="/images/history.png" 
+            alt="My Bookings" 
+            className={`w-4 h-4 object-contain ${activeTab === 'myBookings' ? '' : 'brightness-0 invert'}`}
+          />
+          {lang === 'th' ? 'ประวัติการจองของฉัน' : 'My Bookings'}
         </button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className={`px-4 py-1.5 rounded-full text-sm font-medium shadow-sm ${
+      {/* สถานะออนไลน์ / ออฟไลน์ */}
+      <div className="flex items-center gap-3">
+        <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-2 ${
           isOnline === null 
             ? 'bg-slate-200 text-slate-600' 
             : isOnline 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
+            ? 'bg-emerald-100 text-emerald-800' 
+            : 'bg-rose-100 text-rose-800'
         }`}>
-          {isOnline === null ? t.loading : isOnline ? t.online : t.offline}
+          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+          {isOnline === null 
+            ? (lang === 'th' ? 'กำลังโหลด...' : 'Loading...') 
+            : isOnline 
+            ? (lang === 'th' ? 'ออนไลน์' : 'Online') 
+            : (lang === 'th' ? 'ออฟไลน์' : 'Offline')}
         </span>
         
-        {/* Lang Toggle */}
         <div className="bg-white/20 p-1 rounded-full flex gap-1">
           <button 
             onClick={() => setLang('th')} 
-            className={`px-3 py-1 rounded-full text-sm font-medium transition ${lang === 'th' ? 'bg-white text-purple-900 shadow' : 'text-white'}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition ${lang === 'th' ? 'bg-white text-[#1A237E] shadow' : 'text-white hover:bg-white/10'}`}
           >
             TH
           </button>
           <button 
             onClick={() => setLang('en')} 
-            className={`px-3 py-1 rounded-full text-sm font-medium transition ${lang === 'en' ? 'bg-white text-purple-900 shadow' : 'text-white'}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition ${lang === 'en' ? 'bg-white text-[#1A237E] shadow' : 'text-white hover:bg-white/10'}`}
           >
             EN
           </button>
