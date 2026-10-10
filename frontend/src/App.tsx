@@ -73,23 +73,35 @@ export default function App() {
 
       {activeTab === 'resources' ? (
         <>
-          {/* Filter Controls */}
-          <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-sm">
+          {/* Filter Controls (ปรับเป็นโทนสีน้ำเงินเข้ม) */}
+          <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
               onClick={() => setFilter('')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === '' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+                filter === '' 
+                  ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
+                  : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
+              }`}
             >
               {t.btnAll}
             </button>
             <button 
               onClick={() => setFilter('room')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === 'room' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+                filter === 'room' 
+                  ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
+                  : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
+              }`}
             >
               {t.btnRoom}
             </button>
             <button 
               onClick={() => setFilter('equipment')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition ${filter === 'equipment' ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-200 text-slate-600 hover:border-purple-400'}`}
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+                filter === 'equipment' 
+                  ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
+                  : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
+              }`}
             >
               {t.btnEquip}
             </button>
