@@ -61,8 +61,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
   const updateDateTime = (year: number, month: number, day: number, start: string, end: string) => {
     const pad = (n: number) => String(n).padStart(2, '0');
     const thaiYear = year + (lang === 'th' ? 543 : 0);
-    const formattedDisplay = `${pad(day)} ${months[month]} ${thaiYear} เวลา ${start} - ${end} น.`;
-    setBookingDate(formattedDisplay);
+    
+    // ถ้ายังไม่กดยืนยันเวลา ให้แสดงแค่วันที่อย่างเดียว
+    if (!isConfirmed) {
+      setBookingDate(`${pad(day)} ${months[month]} ${thaiYear}`);
+    } else {
+      setBookingDate(`${pad(day)} ${months[month]} ${thaiYear} เวลา ${start} - ${end} น.`);
+    }
   };
 
   React.useEffect(() => {
@@ -287,8 +292,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
                   return;
                 }
 
-                updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
                 setIsConfirmed(true);
+                updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
                 setIsCalendarOpen(false);
               }}
               onOpenTimeModal={() => setIsTimeModalOpen(true)}
