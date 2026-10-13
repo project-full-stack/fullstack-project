@@ -16,6 +16,14 @@ export const bookings = pgTable('bookings', {
   studentId: text('student_id').notNull(),
   status: text('status').default('pending').notNull(),
   bookingDate: timestamp('booking_date').notNull(),
-  endTime: text('end_time').notNull(), // ✅ เพิ่มฟิลด์เก็บเวลาสิ้นสุด
+  endTime: text('end_time').notNull(), 
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ✅ เพิ่มตารางสำหรับผู้ดูแลระบบ (Admin)
+export const admins = pgTable('admins', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  password: text('password').notNull(), // สำหรับโปรเจกต์ทั่วไปสามารถเก็บแบบ Text ธรรมดาได้ครับ
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
