@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { db } from './db';
-import { resources, bookings } from './db/schema';
+import { resources, bookings, admins } from './db/schema'; // ✅ นำเข้าตาราง admins
 import { eq } from 'drizzle-orm';
 
 const app = express();
@@ -140,6 +140,58 @@ app.get('/bookings/student/:studentId', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch student bookings' });
+  }
+});
+
+// ==========================================
+// 6. ADMIN ENDPOINTS
+// ==========================================
+
+// 6.1 Admin Login Endpoint
+app.post('/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const admin = await db
+      .select()
+      .from(admins)
+      .where(eq(admins.username, username));
+
+    if (admin.length === 0 || admin[0].password !== password) {
+      return res.status(401).json({ success: false, error: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' });
+    }
+
+    res.json({ success: true, message: 'เข้าสู่ระบบสำเร็จ' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Internal Server Error' });
+  }
+});
+
+// 6.2 Update Booking Status Endpoint (Approve / Reject)
+app.patch('/bookings/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // รับค่า 'approved' หรือ 'rejected'
+
+    if (!['approved', 'rejected', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'สถานะไม่ถูกต้อง' });
+    }
+
+    const updated = await db
+      .update(bookings)
+      .set({ status })
+      .where(eq(bookings.id, Number(id)))
+      .returning();
+
+    if (updated.length === 0) {
+      return res.status(404).json({ success: false, error: 'ไม่พบรายการจองนี้' });
+    }
+
+    res.json({ success: true, message: 'อัปเดตสถานะสำเร็จ', data: updated[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Internal Server Error' });
   }
 });
 
