@@ -1,12 +1,11 @@
 import React from 'react';
 import { Language } from '../types';
-import { i18n } from '../data/i18n';
 
 interface NavbarProps {
   lang: Language;
   setLang: (lang: Language) => void;
-  activeTab: 'resources' | 'myBookings';
-  setActiveTab: (tab: 'resources' | 'myBookings') => void;
+  activeTab: 'resources' | 'myBookings' | 'admin';
+  setActiveTab: (tab: 'resources' | 'myBookings' | 'admin') => void;
   isOnline: boolean | null;
 }
 
@@ -51,8 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
         </button>
       </div>
 
-      {/* สถานะออนไลน์ / ออฟไลน์ */}
-      <div className="flex items-center gap-3">
+      {/* ฝั่งขวา: สถานะออนไลน์, ปุ่ม Admin และเปลี่ยนภาษา */}
+      <div className="flex items-center gap-3 flex-wrap justify-center">
         <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-2 ${
           isOnline === null 
             ? 'bg-slate-200 text-slate-600' 
@@ -67,6 +66,18 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
             ? (lang === 'th' ? 'ออนไลน์' : 'Online') 
             : (lang === 'th' ? 'ออฟไลน์' : 'Offline')}
         </span>
+
+        {/* ✅ ปุ่มเข้าสู่ระบบ Admin บน Navbar ขนานกับด้านบน */}
+        <button
+          onClick={() => setActiveTab('admin')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
+            activeTab === 'admin' 
+              ? 'bg-white text-[#1A237E]' 
+              : 'bg-white/20 text-white hover:bg-white/30'
+          }`}
+        >
+          <span>🔐</span> {lang === 'th' ? 'ผู้ดูแลระบบ' : 'Admin'}
+        </button>
         
         <div className="bg-white/20 p-1 rounded-full flex gap-1">
           <button 

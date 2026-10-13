@@ -5,11 +5,12 @@ import { Navbar } from './components/Navbar';
 import { ResourceCard } from './components/ResourceCard';
 import { BookingModal } from './components/BookingModal';
 import { MyBookings } from './components/MyBookings';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export default function App() {
   const API_URL = 'http://localhost:8000';
   
-  // States พร้อมระบบจำค่าภาษาด้วย localStorage
   const [lang, setLang] = useState<Language>(() => {
     const savedLang = localStorage.getItem('app_lang');
     return (savedLang === 'en' || savedLang === 'th') ? savedLang : 'th';
@@ -20,17 +21,17 @@ export default function App() {
   }, [lang]);
 
   const [filter, setFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings'>('resources');
+  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin'>('resources');
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+
   const [resources, setResources] = useState<Resource[]>([]);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // States สำหรับการจอง (Booking Modal)
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
 
   const t = i18n[lang];
 
-  // 1. เช็กสถานะ Backend / Health Check
   useEffect(() => {
     fetch(`${API_URL}/health`)
       .then((res) => res.json())
@@ -38,7 +39,6 @@ export default function App() {
       .catch(() => setIsOnline(false));
   }, []);
 
-  // 2. ดึงข้อมูลทรัพยากร (ห้อง / อุปกรณ์)
   const fetchResources = () => {
     setLoading(true);
     const url = filter ? `${API_URL}/resources?type=${filter}` : `${API_URL}/resources`;
@@ -73,7 +73,7 @@ export default function App() {
 
       {activeTab === 'resources' ? (
         <>
-          {/* Filter Controls (ปรับเป็นโทนสีน้ำเงินเข้ม) */}
+          {/* แถบตัวกรองทรัพยากรแบบคลีนๆ ด้านล่าง */}
           <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
               onClick={() => setFilter('')} 
@@ -131,9 +131,25 @@ export default function App() {
             )}
           </main>
         </>
-      ) : (
+      ) : activeTab === 'myBookings' ? (
         /* MyBookings Component */
         <MyBookings lang={lang} apiUrl={API_URL} />
+      ) : (
+        /* Admin Section */
+        isAdminLoggedIn ? (
+          <AdminDashboard 
+            lang={lang} 
+            apiUrl={API_URL} 
+            onLogout={() => setIsAdminLoggedIn(false)} 
+          />
+        ) : (
+          <AdminLogin 
+            lang={lang} 
+            apiUrl={API_URL} 
+            onLoginSuccess={() => setIsAdminLoggedIn(true)} 
+            onBackToUser={() => setActiveTab('resources')} 
+          />
+        )
       )}
 
       {/* Booking Modal Component */}
