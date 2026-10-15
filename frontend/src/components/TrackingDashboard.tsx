@@ -11,8 +11,8 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
   const [bookings, setBookings] = useState<any[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
-  // ดึงข้อมูลการจองและทรัพยากรทั้งหมด
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -34,15 +34,33 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
     fetchData();
   }, [apiUrl]);
 
-  // แมปข้อมูลทรัพยากรเพื่อให้เข้าถึงชื่อได้ง่าย
+  // ฟังก์ชันส่งอีเมลทวงคืน
+  const handleSendReminder = async (bookingId: number) => {
+    setActionLoadingId(bookingId);
+    try {
+      const res = await fetch(`${apiUrl}/bookings/${bookingId}/remind`, {
+        method: 'POST',
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        alert(lang === 'th' ? 'ส่งอีเมลเตือนให้มาคืนเรียบร้อยแล้ว' : 'Reminder email sent successfully.');
+      } else {
+        alert(result.error || (lang === 'th' ? 'ไม่สามารถส่งอีเมลได้' : 'Failed to send email.'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const resourceMap = new Map(resources.map((r) => [r.id, r]));
 
-  // กรองรายการจองที่ได้รับการอนุมัติแล้ว หรือกำลังยืมอยู่ (approved, borrowed)
   const activeBookings = bookings.filter(
     (b) => b.status === 'approved' || b.status === 'borrowed'
   );
 
-  // แยกประเภทเป็นห้อง (room) และอุปกรณ์ (equipment)
   const roomBookings = activeBookings.filter((b) => {
     const res = resourceMap.get(b.resourceId);
     return res?.type === 'room';
@@ -70,7 +88,6 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
             </p>
           </div>
 
-          {/* แท็บย่อยสลับระหว่าง "รายการใช้ห้อง" และ "รายการยืมอุปกรณ์" */}
           <div className="flex bg-slate-100 p-1 rounded-2xl gap-1">
             <button
               type="button"
@@ -115,17 +132,30 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
                   <th className="py-3 px-4">{lang === 'th' ? 'ชื่อทรัพยากร' : 'Resource Name'}</th>
                   <th className="py-3 px-4">{lang === 'th' ? 'วันที่ / เวลาใช้งาน' : 'Date & Time'}</th>
                   <th className="py-3 px-4">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
+                  {subTab === 'equipment' && (
+                    <th className="py-3 px-4 text-center">{lang === 'th' ? 'จัดการ' : 'Action'}</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {currentList.map((b) => {
                   const resource = resourceMap.get(b.resourceId);
                   const resName = resource ? (lang === 'th' ? resource.nameTh : resource.nameEn) : 'Unknown';
-                  const dateStr = new Date(b.bookingDate).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
+                  const startDate = new Date(b.bookingDate);
+                  
+                  const dateStr = startDate.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                   });
+
+                  const startTimeStr = startDate.toLocaleTimeString(lang === 'th' ? 'th-TH' : 'en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  });
+
+                  const isEquipment = resource?.type === 'equipment';
 
                   return (
                     <tr key={b.id} className="hover:bg-slate-50 transition">
@@ -137,7 +167,17 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
                       <td className="py-3.5 px-4 font-semibold text-[#1A237E]">{resName}</td>
                       <td className="py-3.5 px-4">
                         <div>{dateStr}</div>
-                        <div className="text-slate-400 text-[11px]">{b.endTime}</div>
+                        <div className="text-slate-400 text-[11px]">
+                          {isEquipment ? (
+                            b.borrowDays 
+                              ? (lang === 'th' ? `ยืมจำนวน ${b.borrowDays} วัน` : `Borrow for ${b.borrowDays} days`)
+                              : (lang === 'th' ? 'รอรับอุปกรณ์' : 'Ready for pickup')
+                          ) : (
+                            lang === 'th' 
+                              ? `เวลา ${startTimeStr} - ${b.endTime} น.` 
+                              : `${startTimeStr} - ${b.endTime}`
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={`px-3 py-1 rounded-full font-semibold inline-block text-[11px] uppercase ${
@@ -150,6 +190,24 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
                             : b.status}
                         </span>
                       </td>
+                      {subTab === 'equipment' && (
+                        <td className="py-3.5 px-4 text-center">
+                          {b.status === 'borrowed' ? (
+                            <button
+                              type="button"
+                              disabled={actionLoadingId === b.id}
+                              onClick={() => handleSendReminder(b.id)}
+                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-semibold text-[11px] transition cursor-pointer border border-rose-200 disabled:opacity-50"
+                            >
+                              {actionLoadingId === b.id 
+                                ? (lang === 'th' ? 'กำลังส่ง...' : 'Sending...') 
+                                : (lang === 'th' ? '✉️ ส่งเมลทวงคืน' : 'Send Reminder')}
+                            </button>
+                          ) : (
+                            <span className="text-slate-300 text-[11px]">-</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

@@ -20,10 +20,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง
-const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string, resourceType: string, lang: string = 'th') => {
+// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนรองรับทุกสถานะ (แยกตามภาษา TH / EN และประเภททรัพยากร)
+const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string, resourceType: string, lang: string = 'th', borrowDays?: number) => {
   try {
-    const isApproved = status === 'approved';
     const isThai = lang === 'th';
     const isRoom = resourceType?.toLowerCase() === 'room';
 
@@ -31,34 +30,54 @@ const sendBookingEmail = async (toEmail: string, studentName: string, status: st
     let textMessage = '';
 
     if (isThai) {
-      if (isApproved) {
+      if (status === 'approved') {
         subject = 'แจ้งผลการจอง: การจองของคุณได้รับการอนุมัติแล้ว';
         textMessage = isRoom
           ? `สวัสดีคุณ ${studentName},\n\nการจองห้อง "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว สามารถเข้าใช้งานห้องตามกำหนดเวลาที่จองไว้ได้เลยครับ`
           : `สวัสดีคุณ ${studentName},\n\nการจองอุปกรณ์ "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว กรุณามารับอุปกรณ์ด้วยตนเองตามกำหนดเวลาครับ`;
-      } else {
+      } else if (status === 'rejected') {
         subject = 'แจ้งผลการจอง: การจองของคุณไม่ผ่านการอนุมัติ';
         textMessage = `สวัสดีคุณ ${studentName},\n\nขออภัย การจอง "${resourceName}" ของคุณ "ไม่ผ่านการอนุมัติ" กรุณาตรวจสอบและทำการจองใหม่อีกครั้งครับ`;
+      } else if (status === 'borrowed') {
+        subject = 'แจ้งการยืมอุปกรณ์: คุณได้รับอุปกรณ์เรียบร้อยแล้ว';
+        textMessage = `สวัสดีคุณ ${studentName},\n\nคุณได้รับอุปกรณ์ "${resourceName}" เรียบร้อยแล้ว กำหนดระยะเวลาการยืม ${borrowDays || 3} วัน กรุณานำมาคืนตามกำหนดเวลาครับ`;
+      } else if (status === 'returned') {
+        subject = 'แจ้งการคืนอุปกรณ์: การคืนอุปกรณ์เสร็จสิ้นสมบูรณ์';
+        textMessage = `สวัสดีคุณ ${studentName},\n\nการคืนอุปกรณ์ "${resourceName}" ของคุณเสร็จสิ้นเรียบร้อยแล้ว ขอบคุณที่ใช้บริการระบบของเราครับ`;
+      } else if (status === 'overdue') {
+        subject = 'แจ้งเตือนด่วน: อุปกรณ์เกินกำหนดส่งคืน';
+        textMessage = `สวัสดีคุณ ${studentName},\n\nอุปกรณ์ "${resourceName}" ที่คุณยืมไป ได้ "เลยกำหนดเวลาส่งคืน" แล้ว กรุณานำส่งคืนเจ้าหน้าที่โดยด่วนครับ`;
       }
     } else {
-      if (isApproved) {
+      if (status === 'approved') {
         subject = 'Booking Result: Your booking has been approved';
         textMessage = isRoom
           ? `Dear ${studentName},\n\nYour booking for the room "${resourceName}" has been "approved". You can use the room at the scheduled time.`
           : `Dear ${studentName},\n\nYour booking for the equipment "${resourceName}" has been "approved". Please pick up the equipment at the scheduled time.`;
-      } else {
+      } else if (status === 'rejected') {
         subject = 'Booking Result: Your booking has been rejected';
         textMessage = `Dear ${studentName},\n\nSorry, your booking for "${resourceName}" has been "rejected". Please check and try booking again.`;
+      } else if (status === 'borrowed') {
+        subject = 'Equipment Borrowed: You have successfully picked up the item';
+        textMessage = `Dear ${studentName},\n\nYou have successfully picked up "${resourceName}". Borrow duration is ${borrowDays || 3} days. Please return it on time.`;
+      } else if (status === 'returned') {
+        subject = 'Equipment Returned: Return completed successfully';
+        textMessage = `Dear ${studentName},\n\nThe return of "${resourceName}" has been completed successfully. Thank you for using our system.`;
+      } else if (status === 'overdue') {
+        subject = 'Urgent Notice: Equipment Return Overdue';
+        textMessage = `Dear ${studentName},\n\nThe equipment "${resourceName}" you borrowed is now "overdue". Please return it to the staff as soon as possible.`;
       }
     }
 
-    await transporter.sendMail({
-      from: '"Room & Equipment Booking System" <noreply@booking.com>',
-      to: toEmail,
-      subject: subject,
-      text: textMessage,
-    });
-    console.log(`Email sent successfully to ${toEmail} (${lang})`);
+    if (subject && textMessage) {
+      await transporter.sendMail({
+        from: '"Room & Equipment Booking System" <noreply@booking.com>',
+        to: toEmail,
+        subject: subject,
+        text: textMessage,
+      });
+      console.log(`Email (${status}) sent successfully to ${toEmail} (${lang})`);
+    }
   } catch (error) {
     console.error('Failed to send email:', error);
   }
@@ -114,7 +133,6 @@ app.post('/bookings', async (req, res) => {
       .where(eq(bookings.resourceId, Number(resourceId)));
 
     for (const existing of existingBookings) {
-      // ข้ามรายการที่คืนแล้ว หรือถูกปฏิเสธไปแล้ว เพื่อไม่ให้ล็อกเวลาทับซ้อน
       if (existing.status === 'returned' || existing.status === 'rejected') continue;
 
       const existingStart = new Date(existing.bookingDate);
@@ -241,13 +259,12 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-// 6.2 Update Booking Status Endpoint (Approve / Reject / Borrowed / Returned)
+// 6.2 Update Booking Status Endpoint (Approve / Reject / Borrowed / Returned) + ส่งอีเมลทุกสถานะ
 app.patch('/bookings/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status, borrowDays } = req.body;
 
-    // ✅ รองรับสถานะใหม่: borrowed และ returned
     if (!['approved', 'rejected', 'pending', 'borrowed', 'returned'].includes(status)) {
       return res.status(400).json({ success: false, error: 'สถานะไม่ถูกต้อง' });
     }
@@ -281,15 +298,70 @@ app.patch('/bookings/:id/status', async (req, res) => {
       : 'Resource';
     const resourceType = currentResource ? currentResource.type : 'equipment';
 
-    // ส่งอีเมลเฉพาะกรณีอนุมัติหรือปฏิเสธ
-    if (bookingInfo.email && (status === 'approved' || status === 'rejected')) {
-      await sendBookingEmail(bookingInfo.email, bookingInfo.studentName, status, resourceName, resourceType, userLang);
+    // ✅ ส่งอีเมลแจ้งเตือนทุกสถานะที่เปลี่ยน (พร้อมจัดการ type ให้ปลอดภัย)
+    if (bookingInfo.email) {
+      await sendBookingEmail(
+        bookingInfo.email, 
+        bookingInfo.studentName, 
+        status, 
+        resourceName, 
+        resourceType, 
+        userLang, 
+        bookingInfo.borrowDays ?? undefined
+      );
     }
 
-    res.json({ success: true, message: 'อัปเดตสถานะสำเร็จ', data: bookingInfo });
+    res.json({ success: true, message: 'อัปเดตสถานะและส่งอีเมลสำเร็จ', data: bookingInfo });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'Internal Server Error' });
+  }
+});
+
+// 6.3 Endpoint สำหรับส่งอีเมลเตือนทวงคืน (Overdue / Remind) แยกตามภาษา
+app.post('/bookings/:id/remind', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const targetBooking = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, Number(id)));
+
+    if (targetBooking.length === 0) {
+      return res.status(404).json({ success: false, error: 'ไม่พบข้อมูลการจอง' });
+    }
+
+    const bookingInfo = targetBooking[0];
+
+    const resourceInfo = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, bookingInfo.resourceId));
+
+    const userLang = bookingInfo.lang || 'th';
+    const currentResource = resourceInfo.length > 0 ? resourceInfo[0] : null;
+    const resourceName = currentResource 
+      ? (userLang === 'en' ? currentResource.nameEn : currentResource.nameTh) 
+      : 'Resource';
+    const resourceType = currentResource ? currentResource.type : 'equipment';
+
+    if (bookingInfo.email) {
+      await sendBookingEmail(
+        bookingInfo.email,
+        bookingInfo.studentName,
+        'overdue',
+        resourceName,
+        resourceType,
+        userLang,
+        bookingInfo.borrowDays ?? undefined
+      );
+    }
+
+    res.json({ success: true, message: 'ส่งอีเมลเตือนให้มาคืนเรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Failed to send reminder email' });
   }
 });
 
