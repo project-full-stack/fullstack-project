@@ -8,7 +8,7 @@ interface AdminLoginProps {
   onBackToUser: () => void;
 }
 
-export const AdminLogin: React.FC<AdminLoginProps> = ({ lang, apiUrl, onLoginSuccess, onBackToUser }) => {
+export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, onBackToUser }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -31,11 +31,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ lang, apiUrl, onLoginSuc
       if (response.ok && result.success) {
         onLoginSuccess();
       } else {
-        setErrorMsg(lang === 'th' ? (result.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง') : (result.error || 'Invalid username or password'));
+        setErrorMsg(result.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       }
     } catch (error) {
       console.error(error);
-      setErrorMsg(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์' : 'Server connection error');
+      setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
     } finally {
       setLoading(false);
     }
@@ -49,17 +49,17 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ lang, apiUrl, onLoginSuc
             🔐
           </div>
           <h2 className="text-2xl font-bold text-[#1A237E]">
-            {lang === 'th' ? 'เข้าสู่ระบบผู้ดูแลระบบ' : 'Admin Login'}
+            เข้าสู่ระบบผู้ดูแลระบบ
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            {lang === 'th' ? 'กรุณาเข้าสู่ระบบเพื่อจัดการการจองห้องและอุปกรณ์' : 'Please sign in to manage bookings'}
+            กรุณาเข้าสู่ระบบเพื่อจัดการการจองห้องและอุปกรณ์
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
-              {lang === 'th' ? 'ชื่อผู้ใช้งาน (Username)' : 'Username'}
+              ชื่อผู้ใช้งาน
             </label>
             <input
               type="text"
@@ -73,7 +73,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ lang, apiUrl, onLoginSuc
 
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
-              {lang === 'th' ? 'รหัสผ่าน (Password)' : 'Password'}
+              รหัสผ่าน
             </label>
             <input
               type="password"
@@ -97,14 +97,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ lang, apiUrl, onLoginSuc
               disabled={loading}
               className="w-full py-3 bg-[#1A237E] text-white rounded-xl text-sm font-semibold hover:bg-[#303F9F] shadow transition cursor-pointer disabled:opacity-50"
             >
-              {loading ? (lang === 'th' ? 'กำลังตรวจสอบ...' : 'Signing in...') : (lang === 'th' ? 'เข้าสู่ระบบ' : 'Sign In')}
+              {loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
             </button>
             <button
               type="button"
               onClick={onBackToUser}
               className="w-full py-2.5 text-slate-500 hover:text-slate-800 text-sm font-medium transition cursor-pointer"
             >
-              {lang === 'th' ? '← กลับหน้าหลักผู้ใช้งาน' : '← Back to User View'}
+              ← กลับหน้าหลักผู้ใช้งาน
             </button>
           </div>
         </form>

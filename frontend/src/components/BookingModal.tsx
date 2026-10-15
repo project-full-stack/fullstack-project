@@ -14,7 +14,7 @@ interface BookingModalProps {
 export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, lang, apiUrl, onClose, onSuccess }) => {
   const [studentName, setStudentName] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [email, setEmail] = useState(''); // ✅ เพิ่ม State สำหรับเก็บอีเมล
+  const [email, setEmail] = useState(''); 
   const [bookingDate, setBookingDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -23,6 +23,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
   
   const [isTimeSelected, setIsTimeSelected] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  // สำหรับอุปกรณ์: เก็บแค่วันที่เลือกวันเดียว
+  const [equipmentDate, setEquipmentDate] = useState<Date | null>(null);
 
   const currentDate = new Date();
   const [viewYear, setViewYear] = useState(currentDate.getFullYear());
@@ -40,15 +43,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
   const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
   const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
 
+  const isEquipment = selectedResource?.type === 'equipment';
+
   const handleResetAndClose = () => {
     setStudentName('');
     setStudentId('');
-    setEmail(''); // ✅ รีเซ็ตค่าอีเมลเมื่อปิดโมเดล
+    setEmail('');
     setBookingDate('');
     setIsCalendarOpen(false);
     setIsTimeModalOpen(false);
     setIsTimeSelected(false);
     setIsConfirmed(false);
+    setEquipmentDate(null);
     setStartTime('09:00');
     setEndTime('10:00');
     setErrorMsg('');
@@ -57,7 +63,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
   const handleSelectDay = (day: number) => {
     setSelectedDay(day);
-    updateDateTime(viewYear, viewMonth, day, startTime, endTime);
+    const clickedDate = new Date(viewYear, viewMonth, day);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const thaiYear = viewYear + (lang === 'th' ? 543 : 0);
+
+    if (isEquipment) {
+      // สำหรับอุปกรณ์: เลือกวันเดียวจบ
+      setEquipmentDate(clickedDate);
+      setBookingDate(`${pad(day)} ${months[viewMonth]} ${thaiYear}`);
+    } else {
+      updateDateTime(viewYear, viewMonth, day, startTime, endTime);
+    }
   };
 
   const updateDateTime = (year: number, month: number, day: number, start: string, end: string) => {
@@ -72,10 +88,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
   };
 
   React.useEffect(() => {
-    if (isConfirmed) {
+    if (!isEquipment && isConfirmed) {
       updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
     }
-  }, [startTime, endTime, selectedDay, viewYear, viewMonth, isConfirmed]);
+  }, [startTime, endTime, selectedDay, viewYear, viewMonth, isConfirmed, isEquipment]);
 
   if (!selectedResource) return null;
 
@@ -88,53 +104,43 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     const trimmedEmail = email.trim();
 
     if (!trimmedName) {
-      setErrorMsg(
-        lang === 'th' 
-          ? 'โปรดกรอกชื่อ-นามสกุล' 
-          : 'Please enter your Full Name'
-      );
+      setErrorMsg(lang === 'th' ? 'โปรดกรอกชื่อ-นามสกุล' : 'Please enter your Full Name');
       return;
     }
 
     if (trimmedId.length !== 9 || !/^\d+$/.test(trimmedId)) {
-      setErrorMsg(
-        lang === 'th' 
-          ? 'โปรดกรอกรหัสนักศึกษาให้ถูกต้อง (ต้องเป็นตัวเลข 9 หลัก)' 
-          : 'Please enter a valid Student ID (must be exactly 9 digits)'
-      );
+      setErrorMsg(lang === 'th' ? 'โปรดกรอกรหัสนักศึกษาให้ถูกต้อง (ต้องเป็นตัวเลข 9 หลัก)' : 'Please enter a valid Student ID (must be exactly 9 digits)');
       return;
     }
 
-    // ✅ ตรวจสอบรูปแบบอีเมลเบื้องต้น
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setErrorMsg(
-        lang === 'th' 
-          ? 'โปรดกรอกอีเมลสำหรับรับการแจ้งเตือนให้ถูกต้อง' 
-          : 'Please enter a valid email for notifications'
-      );
+      setErrorMsg(lang === 'th' ? 'โปรดกรอกอีเมลสำหรับรับการแจ้งเตือนให้ถูกต้อง' : 'Please enter a valid email for notifications');
       return;
     }
 
-    if (!isConfirmed || !bookingDate) {
-      setErrorMsg(
-        lang === 'th' 
-          ? 'กรุณาเลือกวันที่และเวลาที่ต้องการจอง' 
-          : 'Please select booking date and time'
-      );
-      return;
+    let bookingStartDateTime: Date;
+    let finalEndTime = endTime;
+
+    if (isEquipment) {
+      if (!equipmentDate) {
+        setErrorMsg(lang === 'th' ? 'กรุณาเลือกวันที่ต้องการยืมอุปกรณ์' : 'Please select a booking date');
+        return;
+      }
+      bookingStartDateTime = equipmentDate;
+      finalEndTime = 'Pickup at Counter';
+    } else {
+      if (!isConfirmed || !bookingDate) {
+        setErrorMsg(lang === 'th' ? 'กรุณาเลือกวันที่และเวลาที่ต้องการจอง' : 'Please select booking date and time');
+        return;
+      }
+      const [hours, minutes] = startTime.split(':').map(Number);
+      bookingStartDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
     }
 
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const selectedDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
     const now = new Date();
-
-    if (selectedDateTime < now) {
-      setErrorMsg(
-        lang === 'th' 
-          ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' 
-          : 'Cannot select past date or time'
-      );
+    if (bookingStartDateTime < now && !isEquipment) {
+      setErrorMsg(lang === 'th' ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' : 'Cannot select past date or time');
       return;
     }
 
@@ -148,9 +154,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
           resourceId: selectedResource.id,
           studentName: trimmedName,
           studentId: trimmedId,
-          email: trimmedEmail, // ✅ ส่งอีเมลแนบไปกับ Payload
-          bookingDate: selectedDateTime.toISOString(),
-          endTime: endTime,
+          email: trimmedEmail,
+          bookingDate: bookingStartDateTime.toISOString(),
+          endTime: finalEndTime,
+          lang: lang,
         }),
       });
 
@@ -173,7 +180,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     }
   };
 
-  const isFormIncomplete = !studentName.trim() || studentId.trim().length !== 9 || !email.trim() || !isConfirmed;
+  const isFormIncomplete = !studentName.trim() || studentId.trim().length !== 9 || !email.trim() || !bookingDate || (isEquipment ? !equipmentDate : !isConfirmed);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50 backdrop-blur-sm">
@@ -221,7 +228,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               />
             </div>
 
-            {/* ✅ ช่องกรอกอีเมลสำหรับรับการแจ้งเตือน */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 {lang === 'th' ? 'อีเมลสำหรับรับผลการจอง' : 'Email for Notifications'}
@@ -241,7 +247,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                {lang === 'th' ? 'วันที่และเวลาที่ต้องการจอง' : 'Booking Date & Time'}
+                {lang === 'th' ? (isEquipment ? 'วันที่ต้องการยืมอุปกรณ์' : 'วันที่และเวลาที่ต้องการจอง') : (isEquipment ? 'Booking Date' : 'Booking Date & Time')}
               </label>
               <Calendar 
                 lang={lang} 
@@ -256,6 +262,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
                 isTimeSelected={isTimeSelected}
                 setIsTimeSelected={setIsTimeSelected}
                 isConfirmed={isConfirmed}
+                hideTimePicker={isEquipment}
               />
             </div>
 
@@ -289,11 +296,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
           </form>
         </div>
 
-        {/* ฝั่งขวา: ปฏิทินและปุ่มเลือกเวลา */}
+        {/* ฝั่งขวา: ปฏิทิน */}
         {isCalendarOpen && (
           <div className="w-full md:w-80 shrink-0 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 animate-in fade-in zoom-in duration-150">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              {lang === 'th' ? 'ปฏิทินและเวลา' : 'Calendar & Time'}
+              {lang === 'th' ? 'เลือกวันที่' : 'Select Date'}
             </h4>
             <CalendarContent 
               lang={lang} 
@@ -309,24 +316,33 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               daysHeader={daysHeader} 
               firstDayIndex={firstDayIndex} 
               totalDays={totalDays} 
+              hideTimePicker={isEquipment} 
               onClose={() => {
-                if (!isTimeSelected) {
-                  alert(lang === 'th' ? 'กรุณาเลือกเวลาก่อนกดตกลง' : 'Please select time before confirming');
-                  return;
+                if (isEquipment) {
+                  if (!equipmentDate) {
+                    alert(lang === 'th' ? 'กรุณาเลือกวันที่ต้องการยืม' : 'Please select a date');
+                    return;
+                  }
+                  setIsConfirmed(true);
+                  setIsCalendarOpen(false);
+                } else {
+                  if (!isTimeSelected) {
+                    alert(lang === 'th' ? 'กรุณาเลือกเวลาก่อนกดตกลง' : 'Please select time before confirming');
+                    return;
+                  }
+                  const [hours, minutes] = startTime.split(':').map(Number);
+                  const selectedDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
+                  const now = new Date();
+
+                  if (selectedDateTime < now) {
+                    alert(lang === 'th' ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' : 'Cannot select past date or time');
+                    return;
+                  }
+
+                  setIsConfirmed(true);
+                  updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
+                  setIsCalendarOpen(false);
                 }
-
-                const [hours, minutes] = startTime.split(':').map(Number);
-                const selectedDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
-                const now = new Date();
-
-                if (selectedDateTime < now) {
-                  alert(lang === 'th' ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' : 'Cannot select past date or time');
-                  return;
-                }
-
-                setIsConfirmed(true);
-                updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
-                setIsCalendarOpen(false);
               }}
               onOpenTimeModal={() => setIsTimeModalOpen(true)}
               isTimeSelected={isTimeSelected}
@@ -336,22 +352,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
       </div>
 
-      {/* Popup Modal เลือกเวลา */}
-      <TimePickerModal
-        lang={lang}
-        isOpen={isTimeModalOpen}
-        onClose={() => {
-          setIsTimeModalOpen(false);
-        }}
-        onConfirm={() => {
-          setIsTimeModalOpen(false);
-          setIsTimeSelected(true);
-        }}
-        startTime={startTime}
-        endTime={endTime}
-        setStartTime={setStartTime}
-        setEndTime={setEndTime}
-      />
+      {!isEquipment && (
+        <TimePickerModal
+          lang={lang}
+          isOpen={isTimeModalOpen}
+          onClose={() => setIsTimeModalOpen(false)}
+          onConfirm={() => {
+            setIsTimeModalOpen(false);
+            setIsTimeSelected(true);
+          }}
+          startTime={startTime}
+          endTime={endTime}
+          setStartTime={setStartTime}
+          setEndTime={setEndTime}
+        />
+      )}
     </div>
   );
 };

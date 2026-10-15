@@ -7,9 +7,11 @@ interface NavbarProps {
   activeTab: 'resources' | 'myBookings' | 'admin';
   setActiveTab: (tab: 'resources' | 'myBookings' | 'admin') => void;
   isOnline: boolean | null;
+  isAdminLoggedIn: boolean;
+  onLogout: () => void; // ✅ เพิ่มรับฟังก์ชันสำหรับกดออกจากระบบ
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setActiveTab, isOnline }) => {
+export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setActiveTab, isOnline, isAdminLoggedIn, onLogout }) => {
   return (
     <header className="bg-[#1A237E] text-white px-6 md:px-10 py-4 flex flex-col lg:flex-row justify-between items-center gap-4 shadow-md sticky top-0 z-40">
       {/* ชื่อระบบ */}
@@ -35,22 +37,35 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           {lang === 'th' ? 'ทรัพยากรทั้งหมด' : 'All Resources'}
         </button>
 
-        <button
-          onClick={() => setActiveTab('myBookings')}
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition ${
-            activeTab === 'myBookings' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
-          }`}
-        >
-          <img 
-            src="/images/history.png" 
-            alt="My Bookings" 
-            className={`w-4 h-4 object-contain ${activeTab === 'myBookings' ? '' : 'brightness-0 invert'}`}
-          />
-          {lang === 'th' ? 'ประวัติการจองของฉัน' : 'My Bookings'}
-        </button>
+        {/* ถ้าแอดมินล็อกอินอยู่ ปุ่มที่สองจะเป็น "ระบบจัดการการจอง" */}
+        {isAdminLoggedIn ? (
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition ${
+              activeTab === 'admin' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
+            }`}
+          >
+            <span>🛠️</span>
+            {lang === 'th' ? 'ระบบจัดการการจอง' : 'Admin Dashboard'}
+          </button>
+        ) : (
+          <button
+            onClick={() => setActiveTab('myBookings')}
+            className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition ${
+              activeTab === 'myBookings' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
+            }`}
+          >
+            <img 
+              src="/images/history.png" 
+              alt="My Bookings" 
+              className={`w-4 h-4 object-contain ${activeTab === 'myBookings' ? '' : 'brightness-0 invert'}`}
+            />
+            {lang === 'th' ? 'ประวัติการจองของฉัน' : 'My Bookings'}
+          </button>
+        )}
       </div>
 
-      {/* ฝั่งขวา: สถานะออนไลน์, ปุ่ม Admin และเปลี่ยนภาษา */}
+      {/* ฝั่งขวา: สถานะออนไลน์, ปุ่ม Admin / Sign Out และเปลี่ยนภาษา */}
       <div className="flex items-center gap-3 flex-wrap justify-center">
         <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-2 ${
           isOnline === null 
@@ -67,17 +82,25 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
             : (lang === 'th' ? 'ออฟไลน์' : 'Offline')}
         </span>
 
-        {/* ✅ ปุ่มเข้าสู่ระบบ Admin บน Navbar ขนานกับด้านบน */}
-        <button
-          onClick={() => setActiveTab('admin')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer ${
-            activeTab === 'admin' 
-              ? 'bg-white text-[#1A237E]' 
-              : 'bg-white/20 text-white hover:bg-white/30'
-          }`}
-        >
-          <span>🔐</span> {lang === 'th' ? 'ผู้ดูแลระบบ' : 'Admin'}
-        </button>
+        {/* ถ้ายังไม่ล็อกอิน แสดงปุ่มเข้าสู่ระบบแอดมิน */}
+        {!isAdminLoggedIn && (
+          <button
+            onClick={() => setActiveTab('admin')}
+            className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-white/20 text-white hover:bg-white/30"
+          >
+            <span>🔐</span> {lang === 'th' ? 'ผู้ดูแลระบบ' : 'Admin'}
+          </button>
+        )}
+
+        {/* ✅ ถ้าล็อกอินเป็นแอดมินแล้ว แสดงปุ่ม "ออกจากระบบ" ตรงนี้แทน */}
+        {isAdminLoggedIn && (
+          <button
+            onClick={onLogout}
+            className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-rose-500 text-white hover:bg-rose-600"
+          >
+            <span>🚪</span> {lang === 'th' ? 'ออกจากระบบ' : 'Sign Out'}
+          </button>
+        )}
         
         <div className="bg-white/20 p-1 rounded-full flex gap-1">
           <button 

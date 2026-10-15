@@ -12,26 +12,45 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ ตั้งค่าตัวส่งอีเมล (Nodemailer)
-// หมายเหตุ: แนะนำให้ใช้ Gmail และเปิดใช้ App Password 16 หลัก
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'nweeranoi@gmail.com', 
-    pass: 'qwytggggjofgasoh'     
+    pass: 'qwytggggjofgasoh'    
   }
 });
 
-// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง
-const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string) => {
+// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง (แยกประเภท ห้อง vs อุปกรณ์ และรองรับภาษาไทย/อังกฤษ)
+const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string, resourceType: string, lang: string = 'th') => {
   try {
     const isApproved = status === 'approved';
-    const subject = isApproved 
-      ? 'แจ้งผลการจอง: การจองของคุณได้รับการอนุมัติแล้ว' 
-      : 'แจ้งผลการจอง: การจองของคุณไม่ผ่านการอนุมัติ';
-    
-    const textMessage = isApproved
-      ? `สวัสดีคุณ ${studentName},\n\nการจองทรัพยากร "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว กรุณามารับของหรือเข้าใช้งานตามกำหนดเวลาที่ฝ่ายครับ`
-      : `สวัสดีคุณ ${studentName},\n\nขออภัย การจองทรัพยากร "${resourceName}" ของคุณ "ไม่ผ่านการอนุมัติ" เนื่องจากช่วงเวลาไม่ว่างหรือข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและทำการจองใหม่อีกครั้งครับ`;
+    const isThai = lang === 'th';
+    const isRoom = resourceType?.toLowerCase() === 'room';
+
+    let subject = '';
+    let textMessage = '';
+
+    if (isThai) {
+      if (isApproved) {
+        subject = 'แจ้งผลการจอง: การจองของคุณได้รับการอนุมัติแล้ว';
+        textMessage = isRoom
+          ? `สวัสดีคุณ ${studentName},\n\nการจองห้อง "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว สามารถเข้าใช้งานห้องตามกำหนดเวลาที่จองไว้ได้เลยครับ`
+          : `สวัสดีคุณ ${studentName},\n\nการจองอุปกรณ์ "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว กรุณามารับอุปกรณ์ด้วยตนเองตามกำหนดเวลาครับ`;
+      } else {
+        subject = 'แจ้งผลการจอง: การจองของคุณไม่ผ่านการอนุมัติ';
+        textMessage = `สวัสดีคุณ ${studentName},\n\nขออภัย การจอง "${resourceName}" ของคุณ "ไม่ผ่านการอนุมัติ" กรุณาตรวจสอบและทำการจองใหม่อีกครั้งครับ`;
+      }
+    } else {
+      if (isApproved) {
+        subject = 'Booking Result: Your booking has been approved';
+        textMessage = isRoom
+          ? `Dear ${studentName},\n\nYour booking for the room "${resourceName}" has been "approved". You can use the room at the scheduled time.`
+          : `Dear ${studentName},\n\nYour booking for the equipment "${resourceName}" has been "approved". Please pick up the equipment at the scheduled time.`;
+      } else {
+        subject = 'Booking Result: Your booking has been rejected';
+        textMessage = `Dear ${studentName},\n\nSorry, your booking for "${resourceName}" has been "rejected". Please check and try booking again.`;
+      }
+    }
 
     await transporter.sendMail({
       from: '"Room & Equipment Booking System" <noreply@booking.com>',
@@ -39,7 +58,7 @@ const sendBookingEmail = async (toEmail: string, studentName: string, status: st
       subject: subject,
       text: textMessage,
     });
-    console.log(`Email sent successfully to ${toEmail}`);
+    console.log(`Email sent successfully to ${toEmail} (${lang})`);
   } catch (error) {
     console.error('Failed to send email:', error);
   }
@@ -69,10 +88,10 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint (รองรับ email, endTime และระบบป้องกันการจองซ้ำ + เช็คเวลาอดีต)
+// 3. Create Booking Endpoint (รองรับ email, endTime, lang และระบบป้องกันการจองซ้ำ + เช็คเวลาอดีต)
 app.post('/bookings', async (req, res) => {
   try {
-    const { resourceId, studentName, studentId, email, bookingDate, endTime } = req.body;
+    const { resourceId, studentName, studentId, email, bookingDate, endTime, lang } = req.body;
 
     if (!resourceId || !studentName || !studentId || !email || !bookingDate || !endTime) {
       return res.status(400).json({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วนรวมถึงอีเมล' });
@@ -111,15 +130,16 @@ app.post('/bookings', async (req, res) => {
       }
     }
 
-    // ✅ บันทึกลงฐานข้อมูลรวม email
+    // ✅ บันทึกลงฐานข้อมูลรวม email และ lang (ภาษาที่เลือก)
     const newBooking = await db.insert(bookings).values({
       resourceId: Number(resourceId),
       studentName,
       studentId,
-      email, // บันทึกอีเมล
+      email,
       bookingDate: bookingDateTime,
       endTime: endTime,
       status: 'pending',
+      lang: lang || 'th',
     }).returning();
 
     res.status(201).json({
@@ -158,7 +178,7 @@ app.get('/bookings/student/:studentId', async (req, res) => {
         resourceType: resources.type,
         studentName: bookings.studentName,
         studentId: bookings.studentId,
-        email: bookings.email, // ส่งอีเมลกลับไปด้วยถ้าจำเป็น
+        email: bookings.email,
         status: bookings.status,
         bookingDate: bookings.bookingDate,
         endTime: bookings.endTime,
@@ -200,11 +220,11 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-// 6.2 Update Booking Status Endpoint (Approve / Reject) + ส่งอีเมลอัตโนมัติ
+// 6.2 Update Booking Status Endpoint (Approve / Reject) + ส่งอีเมลแยกตามประเภททรัพยากรและภาษา
 app.patch('/bookings/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // รับค่า 'approved' หรือ 'rejected' (หรือ 'declined')
+    const { status } = req.body;
 
     if (!['approved', 'rejected', 'pending'].includes(status)) {
       return res.status(400).json({ success: false, error: 'สถานะไม่ถูกต้อง' });
@@ -223,17 +243,22 @@ app.patch('/bookings/:id/status', async (req, res) => {
 
     const bookingInfo = updated[0];
 
-    // ดึงชื่อทรัพยากรมาแสดงในเนื้อหาอีเมลให้ชัดเจน
+    // ดึงข้อมูลทรัพยากรเพื่อเช็กชื่อและประเภท (room หรือ equipment)
     const resourceInfo = await db
       .select()
       .from(resources)
       .where(eq(resources.id, bookingInfo.resourceId));
     
-    const resourceName = resourceInfo.length > 0 ? resourceInfo[0].nameTh : 'ทรัพยากร';
+    const userLang = bookingInfo.lang || 'th';
+    const currentResource = resourceInfo.length > 0 ? resourceInfo[0] : null;
+    const resourceName = currentResource 
+      ? (userLang === 'en' ? currentResource.nameEn : currentResource.nameTh) 
+      : 'Resource';
+    const resourceType = currentResource ? currentResource.type : 'equipment';
 
-    // 2. ✅ ส่งอีเมลแจ้งเตือนไปยังผู้จองทันทีที่ Admin เปลี่ยนสถานะ (ถ้ามีอีเมล)
+    // 2. ✅ ส่งอีเมลแจ้งเตือนตามประเภททรัพยากรและภาษาที่ผู้ใช้เลือก
     if (bookingInfo.email) {
-      await sendBookingEmail(bookingInfo.email, bookingInfo.studentName, status, resourceName);
+      await sendBookingEmail(bookingInfo.email, bookingInfo.studentName, status, resourceName, resourceType, userLang);
     }
 
     res.json({ success: true, message: 'อัปเดตสถานะและส่งอีเมลแจ้งเตือนสำเร็จ', data: bookingInfo });

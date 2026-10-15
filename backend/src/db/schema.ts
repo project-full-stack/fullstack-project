@@ -11,13 +11,14 @@ export const resources = pgTable('resources', {
 
 export const bookings = pgTable('bookings', {
   id: serial('id').primaryKey(),
-  resourceId: integer('resource_id').references(() => resources.id).notNull(), // ✅ ปรับจาก serial เป็น integer ให้ถูกต้องตามความสัมพันธ์
+  resourceId: integer('resource_id').references(() => resources.id).notNull(),
   studentName: text('student_name').notNull(),
   studentId: text('student_id').notNull(),
-  email: text('email').notNull(), // ✅ เพิ่มคอลัมน์ email ตรงนี้ครับ
+  email: text('email').notNull(),
   status: text('status').default('pending').notNull(),
   bookingDate: timestamp('booking_date').notNull(),
   endTime: text('end_time').notNull(), 
+  lang: text('lang').default('th').notNull(), // ✅ เพิ่มคอลัมน์ lang ตรงนี้เพื่อรองรับการส่งอีเมลแยกตามภาษา
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
