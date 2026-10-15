@@ -69,30 +69,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     }
   };
 
-  // ✅ ฟังก์ชันจำลองการยิง API อัปเดตสถานะเป็น borrowed ชั่วคราวทันทีโดยไม่ต้องสแกนจริง
-  const handleSimulatePickup = async () => {
-    if (!booking) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`${apiUrl}/bookings/${booking.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'borrowed', borrowDays: Number(borrowDays) }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        setIsSuccess(true); // เปลี่ยนหน้าจอเป็นสำเร็จ
-      } else {
-        alert(result.error || (lang === 'th' ? 'ไม่สามารถอัปเดตสถานะได้' : 'Failed to update status'));
-      }
-    } catch (error) {
-      console.error(error);
-      alert(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const displayName = lang === 'th' ? resource.nameTh : resource.nameEn;
 
   const appFrontendUrl = window.location.origin; 
@@ -226,7 +202,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                 : 'Scan this QR Code with a mobile camera to confirm pickup immediately.'}
             </p>
 
-            {booking.status === 'borrowed' ? (
+            {booking.status === 'borrowed' && (
               <div className="pt-2">
                 <button
                   type="button"
@@ -235,18 +211,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                   className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow transition cursor-pointer disabled:opacity-50"
                 >
                   {actionLoading ? 'กำลังบันทึก...' : (lang === 'th' ? '✓ ยืนยันการคืนอุปกรณ์ (เสร็จสิ้น)' : 'Confirm Return')}
-                </button>
-              </div>
-            ) : (
-              <div className="pt-2">
-                {/* 🛠️ ปุ่มจำลองการสแกนรับอุปกรณ์ชั่วคราว */}
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={handleSimulatePickup}
-                  className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-[#1A237E] border border-indigo-200 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50"
-                >
-                  {actionLoading ? 'กำลังจำลอง...' : (lang === 'th' ? '🛠️ [จำลองสแกนรับอุปกรณ์สำเร็จ]' : '[Simulate Pickup Success]')}
                 </button>
               </div>
             )}
