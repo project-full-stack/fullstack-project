@@ -3,7 +3,7 @@ import cors from 'cors';
 import { db } from './db';
 import { resources, bookings, admins } from './db/schema';
 import { eq } from 'drizzle-orm';
-import nodemailer from 'nodemailer'; // ✅ นำเข้า nodemailer
+import nodemailer from 'nodemailer';
 
 const app = express();
 const PORT = 8000;
@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง (แยกประเภท ห้อง vs อุปกรณ์ และรองรับภาษาไทย/อังกฤษ)
+// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง
 const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string, resourceType: string, lang: string = 'th') => {
   try {
     const isApproved = status === 'approved';
@@ -88,7 +88,7 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint (รองรับ email, endTime, lang และระบบป้องกันการจองซ้ำ + เช็คเวลาอดีต)
+// 3. Create Booking Endpoint
 app.post('/bookings', async (req, res) => {
   try {
     const { resourceId, studentName, studentId, email, bookingDate, endTime, lang } = req.body;
@@ -114,8 +114,10 @@ app.post('/bookings', async (req, res) => {
       .where(eq(bookings.resourceId, Number(resourceId)));
 
     for (const existing of existingBookings) {
+      // ข้ามรายการที่คืนแล้ว หรือถูกปฏิเสธไปแล้ว เพื่อไม่ให้ล็อกเวลาทับซ้อน
+      if (existing.status === 'returned' || existing.status === 'rejected') continue;
+
       const existingStart = new Date(existing.bookingDate);
-      
       const [exEndHours, exEndMinutes] = existing.endTime.split(':').map(Number);
       const existingEnd = new Date(existingStart);
       existingEnd.setHours(exEndHours, exEndMinutes, 0, 0);
@@ -130,7 +132,6 @@ app.post('/bookings', async (req, res) => {
       }
     }
 
-    // ✅ บันทึกลงฐานข้อมูลรวม email และ lang (ภาษาที่เลือก)
     const newBooking = await db.insert(bookings).values({
       resourceId: Number(resourceId),
       studentName,
@@ -153,7 +154,7 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// 4. Get Bookings Endpoint (Join กับตาราง resources เพื่อดึงชื่อและประเภทมาแสดงผลที่หน้าแอดมิน)
+// 4. Get Bookings Endpoint
 app.get('/bookings', async (req, res) => {
   try {
     const result = await db
@@ -169,6 +170,7 @@ app.get('/bookings', async (req, res) => {
         status: bookings.status,
         bookingDate: bookings.bookingDate,
         endTime: bookings.endTime,
+        borrowDays: bookings.borrowDays,
         lang: bookings.lang,
         createdAt: bookings.createdAt,
       })
@@ -200,6 +202,7 @@ app.get('/bookings/student/:studentId', async (req, res) => {
         status: bookings.status,
         bookingDate: bookings.bookingDate,
         endTime: bookings.endTime,
+        borrowDays: bookings.borrowDays,
         createdAt: bookings.createdAt,
       })
       .from(bookings)
@@ -238,20 +241,25 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-// 6.2 Update Booking Status Endpoint (Approve / Reject) + ส่งอีเมลแยกตามประเภททรัพยากรและภาษา
+// 6.2 Update Booking Status Endpoint (Approve / Reject / Borrowed / Returned)
 app.patch('/bookings/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, borrowDays } = req.body;
 
-    if (!['approved', 'rejected', 'pending'].includes(status)) {
+    // ✅ รองรับสถานะใหม่: borrowed และ returned
+    if (!['approved', 'rejected', 'pending', 'borrowed', 'returned'].includes(status)) {
       return res.status(400).json({ success: false, error: 'สถานะไม่ถูกต้อง' });
     }
 
-    // 1. อัปเดตสถานะในฐานข้อมูล
+    const updateData: any = { status };
+    if (status === 'borrowed' && borrowDays) {
+      updateData.borrowDays = Number(borrowDays);
+    }
+
     const updated = await db
       .update(bookings)
-      .set({ status })
+      .set(updateData)
       .where(eq(bookings.id, Number(id)))
       .returning();
 
@@ -261,7 +269,6 @@ app.patch('/bookings/:id/status', async (req, res) => {
 
     const bookingInfo = updated[0];
 
-    // ดึงข้อมูลทรัพยากรเพื่อเช็กชื่อและประเภท (room หรือ equipment)
     const resourceInfo = await db
       .select()
       .from(resources)
@@ -274,12 +281,12 @@ app.patch('/bookings/:id/status', async (req, res) => {
       : 'Resource';
     const resourceType = currentResource ? currentResource.type : 'equipment';
 
-    // 2. ✅ ส่งอีเมลแจ้งเตือนตามประเภททรัพยากรและภาษาที่ผู้ใช้เลือก
-    if (bookingInfo.email) {
+    // ส่งอีเมลเฉพาะกรณีอนุมัติหรือปฏิเสธ
+    if (bookingInfo.email && (status === 'approved' || status === 'rejected')) {
       await sendBookingEmail(bookingInfo.email, bookingInfo.studentName, status, resourceName, resourceType, userLang);
     }
 
-    res.json({ success: true, message: 'อัปเดตสถานะและส่งอีเมลแจ้งเตือนสำเร็จ', data: bookingInfo });
+    res.json({ success: true, message: 'อัปเดตสถานะสำเร็จ', data: bookingInfo });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'Internal Server Error' });

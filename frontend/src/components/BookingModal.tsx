@@ -277,7 +277,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               <button
                 type="button"
                 onClick={handleResetAndClose}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
               >
                 {lang === 'th' ? 'ยกเลิก' : 'Cancel'}
               </button>

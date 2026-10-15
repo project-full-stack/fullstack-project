@@ -18,7 +18,8 @@ export const bookings = pgTable('bookings', {
   status: text('status').default('pending').notNull(),
   bookingDate: timestamp('booking_date').notNull(),
   endTime: text('end_time').notNull(), 
-  lang: text('lang').default('th').notNull(), // ✅ เพิ่มคอลัมน์ lang ตรงนี้เพื่อรองรับการส่งอีเมลแยกตามภาษา
+  borrowDays: integer('borrow_days'), // ✅ เพิ่มคอลัมน์เก็บจำนวนวันที่ยืมจริง
+  lang: text('lang').default('th').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
