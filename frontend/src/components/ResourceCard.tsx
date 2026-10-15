@@ -5,10 +5,12 @@ import { i18n } from '../data/i18n';
 interface ResourceCardProps {
   resource: Resource;
   lang: Language;
-  onBookClick: (resource: Resource) => void;
+  onBookClick?: (resource: Resource) => void;
+  isAdminLoggedIn?: boolean;
+  isBooked?: boolean; // ✅ เพิ่ม prop เช็กว่าอุปกรณ์ชิ้นนี้ถูกจองไปแล้วหรือยัง
 }
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick, isAdminLoggedIn, isBooked }) => {
   const t = i18n[lang];
   const isRoom = resource.type?.toLowerCase() === 'room';
   
@@ -30,6 +32,9 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
 
   const displayType = isRoom ? t.room : t.equipment;
   const displayName = lang === 'th' ? resource.nameTh : resource.nameEn;
+
+  // เงื่อนไขสถานะ: ถ้าเป็นอุปกรณ์และถูกจองแล้ว
+  const showAsBooked = !isRoom && isBooked;
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
@@ -63,21 +68,33 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
       {/* ส่วนสถานะและปุ่มจอง */}
       <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-          resource.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
+          showAsBooked 
+            ? 'bg-amber-100 text-amber-700' 
+            : resource.isActive 
+              ? 'bg-emerald-100 text-emerald-700' 
+              : 'bg-slate-200 text-slate-500'
         }`}>
-          {resource.isActive ? t.available : t.unavailable}
+          {showAsBooked 
+            ? (lang === 'th' ? 'ถูกจองแล้ว' : 'Booked') 
+            : (resource.isActive ? t.available : t.unavailable)}
         </span>
-        <button
-          onClick={() => onBookClick(resource)}
-          disabled={!resource.isActive}
-          className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all ${
-            resource.isActive 
-              ? 'bg-[#1A237E] text-white hover:bg-[#303F9F] active:scale-95' 
-              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-          }`}
-        >
-          {lang === 'th' ? 'จองใช้งาน' : 'Book Now'}
-        </button>
+
+        {/* ✅ ถ้าเป็นแอดมิน จะไม่แสดงปุ่มจอง แต่ถ้าเป็นผู้ใช้ทั่วไปจะแสดงปุ่มจองปกติ (และปิดการกดถ้าถูกจองไปแล้ว) */}
+        {!isAdminLoggedIn && (
+          <button
+            onClick={() => onBookClick && onBookClick(resource)}
+            disabled={!resource.isActive || showAsBooked}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all ${
+              resource.isActive && !showAsBooked
+                ? 'bg-[#1A237E] text-white hover:bg-[#303F9F] active:scale-95 cursor-pointer' 
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {showAsBooked 
+              ? (lang === 'th' ? 'ไม่ว่าง' : 'Unavailable') 
+              : (lang === 'th' ? 'จองใช้งาน' : 'Book Now')}
+          </button>
+        )}
       </div>
     </div>
   );

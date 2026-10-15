@@ -21,8 +21,23 @@ export default function App() {
   }, [lang]);
 
   const [filter, setFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin'>('resources');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  
+  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin'>(() => {
+    const savedTab = localStorage.getItem('app_activeTab');
+    return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin') ? savedTab : 'resources';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_activeTab', activeTab);
+  }, [activeTab]);
+
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('app_isAdminLoggedIn') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_isAdminLoggedIn', String(isAdminLoggedIn));
+  }, [isAdminLoggedIn]);
 
   const [resources, setResources] = useState<Resource[]>([]);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
@@ -69,6 +84,11 @@ export default function App() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         isOnline={isOnline} 
+        isAdminLoggedIn={isAdminLoggedIn}
+        onLogout={() => {
+          setIsAdminLoggedIn(false);
+          setActiveTab('resources');
+        }}
       />
 
       {activeTab === 'resources' ? (
@@ -124,7 +144,8 @@ export default function App() {
                     key={item.id} 
                     resource={item} 
                     lang={lang} 
-                    onBookClick={(res) => setSelectedResource(res)} 
+                    isAdminLoggedIn={isAdminLoggedIn}
+                    {...(!isAdminLoggedIn && { onBookClick: (res) => setSelectedResource(res) })}
                   />
                 ))}
               </div>
@@ -132,7 +153,7 @@ export default function App() {
           </main>
         </>
       ) : activeTab === 'myBookings' ? (
-        /* MyBookings Component */
+        /* MyBookings Component (สำหรับผู้ใช้ทั่วไป) */
         <MyBookings lang={lang} apiUrl={API_URL} />
       ) : (
         /* Admin Section */
@@ -140,13 +161,19 @@ export default function App() {
           <AdminDashboard 
             lang={lang} 
             apiUrl={API_URL} 
-            onLogout={() => setIsAdminLoggedIn(false)} 
+            onLogout={() => {
+              setIsAdminLoggedIn(false);
+              setActiveTab('resources');
+            }} 
           />
         ) : (
           <AdminLogin 
             lang={lang} 
             apiUrl={API_URL} 
-            onLoginSuccess={() => setIsAdminLoggedIn(true)} 
+            onLoginSuccess={() => {
+              setIsAdminLoggedIn(true);
+              setActiveTab('admin'); // ล็อกอินสำเร็จสลับไปหน้า Admin Dashboard ทันที
+            }} 
             onBackToUser={() => setActiveTab('resources')} 
           />
         )

@@ -15,6 +15,7 @@ interface CalendarProps {
   isTimeSelected: boolean;
   setIsTimeSelected: (val: boolean) => void;
   isConfirmed: boolean;
+  hideTimePicker?: boolean; // ✅ เพิ่ม prop สำหรับซ่อนตัวเลือกเวลา
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ 
@@ -28,13 +29,14 @@ export const Calendar: React.FC<CalendarProps> = ({
   setEndTime,
   isTimeSelected,
   setIsTimeSelected,
-  isConfirmed
+  isConfirmed,
+  hideTimePicker
 }) => {
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
 
   return (
     <div className="space-y-2.5">
-      {/* ช่องหลักด้านบน: กดเพื่อเปิดปฏิทินฝั่งขวา (ใช้ calendar.png) */}
+      {/* ช่องหลักด้านบน: กดเพื่อเปิดปฏิทินฝั่งขวา */}
       <div className="relative">
         <button
           type="button"
@@ -42,14 +44,14 @@ export const Calendar: React.FC<CalendarProps> = ({
           className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-[#1A237E]"
         >
           <span className={value ? 'text-slate-800 font-medium' : 'text-slate-400'}>
-            {value || (lang === 'th' ? 'เลือกวันที่และเวลาใช้งาน' : 'Select Date & Time')}
+            {value || (lang === 'th' ? (hideTimePicker ? 'เลือกวันที่ต้องการยืม' : 'เลือกวันที่และเวลาใช้งาน') : (hideTimePicker ? 'Select Date' : 'Select Date & Time'))}
           </span>
           <img src="/images/calendar.png" alt="Calendar" className="w-4 h-4 object-contain" />
         </button>
       </div>
 
-      {/* แถบสรุปเวลาฝั่งซ้าย (ใช้ clock.png) */}
-      {isConfirmed && !isOpen && (
+      {/* แถบสรุปเวลาฝั่งซ้าย (แสดงเฉพาะกรณีไม่ใช่เครื่องมือ/อุปกรณ์) */}
+      {!hideTimePicker && isConfirmed && !isOpen && (
         <div>
           <button
             type="button"
@@ -104,12 +106,13 @@ export const CalendarContent = ({
   totalDays, 
   onClose,
   onOpenTimeModal,
-  isTimeSelected
+  isTimeSelected,
+  hideTimePicker // ✅ รับค่ามาเพื่อซ่อนปุ่มเลือกเวลา
 }: any) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        {/* ปุ่มเปลี่ยนเดือนย้อนกลับ (ใช้ arrow-left.png) */}
+        {/* ปุ่มเปลี่ยนเดือนย้อนกลับ */}
         <button
           type="button"
           onClick={() => {
@@ -125,7 +128,7 @@ export const CalendarContent = ({
           {months[viewMonth]} {viewYear + (lang === 'th' ? 543 : 0)}
         </span>
 
-        {/* ปุ่มเปลี่ยนเดือนถัดไป (ใช้ arrow-right.png) */}
+        {/* ปุ่มเปลี่ยนเดือนถัดไป */}
         <button
           type="button"
           onClick={() => {
@@ -162,24 +165,26 @@ export const CalendarContent = ({
         })}
       </div>
 
-      {/* ปุ่มเลือกเวลาฝั่งขวา (ใช้ clock.png) */}
-      <div className="border-t border-slate-100 pt-3 mb-4">
-        <button
-          type="button"
-          onClick={onOpenTimeModal}
-          className="w-full px-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 flex justify-between items-center hover:bg-slate-100 transition cursor-pointer"
-        >
-          <span className="font-medium text-slate-600 flex items-center gap-1.5">
-            <img src="/images/clock.png" alt="Clock" className="w-3.5 h-3.5 object-contain" /> 
-            {isTimeSelected 
-              ? (lang === 'th' ? `เวลา: ${startTime} - ${endTime} น.` : `Time: ${startTime} - ${endTime}`)
-              : (lang === 'th' ? 'กรุณาเลือกเวลา' : 'Please select time')}
-          </span>
-          <span className="text-[#1A237E] font-semibold">
-            {isTimeSelected ? (lang === 'th' ? 'เปลี่ยนเวลา' : 'Change Time') : (lang === 'th' ? 'เลือกเวลา' : 'Select Time')}
-          </span>
-        </button>
-      </div>
+      {/* ✅ ซ่อนปุ่มเลือกเวลาฝั่งขวาถ้าเป็นอุปกรณ์ (hideTimePicker = true) */}
+      {!hideTimePicker && (
+        <div className="border-t border-slate-100 pt-3 mb-4">
+          <button
+            type="button"
+            onClick={onOpenTimeModal}
+            className="w-full px-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 flex justify-between items-center hover:bg-slate-100 transition cursor-pointer"
+          >
+            <span className="font-medium text-slate-600 flex items-center gap-1.5">
+              <img src="/images/clock.png" alt="Clock" className="w-3.5 h-3.5 object-contain" /> 
+              {isTimeSelected 
+                ? (lang === 'th' ? `เวลา: ${startTime} - ${endTime} น.` : `Time: ${startTime} - ${endTime}`)
+                : (lang === 'th' ? 'กรุณาเลือกเวลา' : 'Please select time')}
+            </span>
+            <span className="text-[#1A237E] font-semibold">
+              {isTimeSelected ? (lang === 'th' ? 'เปลี่ยนเวลา' : 'Change Time') : (lang === 'th' ? 'เลือกเวลา' : 'Select Time')}
+            </span>
+          </button>
+        </div>
+      )}
 
       <div className="pt-3 border-t border-slate-100 flex justify-end">
         <button
