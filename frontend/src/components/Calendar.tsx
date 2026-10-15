@@ -15,7 +15,7 @@ interface CalendarProps {
   isTimeSelected: boolean;
   setIsTimeSelected: (val: boolean) => void;
   isConfirmed: boolean;
-  hideTimePicker?: boolean; // ✅ เพิ่ม prop สำหรับซ่อนตัวเลือกเวลา
+  hideTimePicker?: boolean;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ 
@@ -36,7 +36,6 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <div className="space-y-2.5">
-      {/* ช่องหลักด้านบน: กดเพื่อเปิดปฏิทินฝั่งขวา */}
       <div className="relative">
         <button
           type="button"
@@ -50,7 +49,6 @@ export const Calendar: React.FC<CalendarProps> = ({
         </button>
       </div>
 
-      {/* แถบสรุปเวลาฝั่งซ้าย (แสดงเฉพาะกรณีไม่ใช่เครื่องมือ/อุปกรณ์) */}
       {!hideTimePicker && isConfirmed && !isOpen && (
         <div>
           <button
@@ -69,13 +67,10 @@ export const Calendar: React.FC<CalendarProps> = ({
         </div>
       )}
 
-      {/* Popup Modal สำหรับกดเปลี่ยนเวลา */}
       <TimePickerModal
         lang={lang}
         isOpen={isTimeModalOpen}
-        onClose={() => {
-          setIsTimeModalOpen(false);
-        }}
+        onClose={() => setIsTimeModalOpen(false)}
         onConfirm={() => {
           setIsTimeModalOpen(false);
           setIsTimeSelected(true);
@@ -89,7 +84,6 @@ export const Calendar: React.FC<CalendarProps> = ({
   );
 };
 
-// คอมเพเนนต์ฝั่งขวา: ปฏิทิน + ปุ่มเลือกเวลา
 export const CalendarContent = ({ 
   lang, 
   viewYear, 
@@ -107,12 +101,51 @@ export const CalendarContent = ({
   onClose,
   onOpenTimeModal,
   isTimeSelected,
-  hideTimePicker // ✅ รับค่ามาเพื่อซ่อนปุ่มเลือกเวลา
+  hideTimePicker
 }: any) => {
+  const getHolidaysForYear = (year: number) => {
+    const fixedHolidays = [
+      `${year}-01-01`,
+      `${year}-04-06`,
+      `${year}-04-13`,
+      `${year}-04-14`,
+      `${year}-04-15`,
+      `${year}-05-01`,
+      `${year}-05-04`,
+      `${year}-06-03`,
+      `${year}-07-28`,
+      `${year}-08-12`,
+      `${year}-10-13`,
+      `${year}-10-23`,
+      `${year}-12-05`,
+      `${year}-12-10`,
+      `${year}-12-31`
+    ];
+
+    const religiousHolidays: { [key: number]: string[] } = {
+      2026: [
+        '2026-03-03',
+        '2026-05-31',
+        '2026-07-28',
+        '2026-07-29'
+      ],
+      2027: [
+        '2027-02-22',
+        '2027-05-20',
+        '2027-07-17',
+        '2027-07-18'
+      ]
+    };
+
+    const dynamicHolidays = religiousHolidays[year] || [];
+    return [...fixedHolidays, ...dynamicHolidays];
+  };
+
+  const publicHolidays = getHolidaysForYear(viewYear);
+
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        {/* ปุ่มเปลี่ยนเดือนย้อนกลับ */}
         <button
           type="button"
           onClick={() => {
@@ -128,7 +161,6 @@ export const CalendarContent = ({
           {months[viewMonth]} {viewYear + (lang === 'th' ? 543 : 0)}
         </span>
 
-        {/* ปุ่มเปลี่ยนเดือนถัดไป */}
         <button
           type="button"
           onClick={() => {
@@ -149,14 +181,29 @@ export const CalendarContent = ({
         {Array.from({ length: firstDayIndex }).map((_, i) => (<div key={`empty-${i}`} />))}
         {Array.from({ length: totalDays }).map((_, i) => {
           const dayNum = i + 1;
+          const currentLoopDate = new Date(viewYear, viewMonth, dayNum);
+          const dayOfWeek = currentLoopDate.getDay();
+          
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const dateString = `${viewYear}-${pad(viewMonth + 1)}-${pad(dayNum)}`;
+
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          const isHoliday = publicHolidays.includes(dateString);
+          const isDisabled = isWeekend || isHoliday;
           const isSelected = dayNum === selectedDay;
+
           return (
             <button
               key={dayNum}
               type="button"
-              onClick={() => handleSelectDay(dayNum)}
-              className={`py-1.5 rounded-xl text-xs font-medium transition cursor-pointer ${
-                isSelected ? 'bg-[#1A237E] text-white shadow-sm font-bold' : 'hover:bg-slate-100 text-slate-700'
+              disabled={isDisabled}
+              onClick={() => !isDisabled && handleSelectDay(dayNum)}
+              className={`py-1.5 rounded-xl text-xs font-medium transition ${
+                isDisabled 
+                  ? 'text-slate-300 cursor-not-allowed bg-transparent' 
+                  : isSelected 
+                    ? 'bg-[#1A237E] text-white shadow-sm font-bold cursor-pointer' 
+                    : 'hover:bg-slate-100 text-slate-700 cursor-pointer'
               }`}
             >
               {dayNum}
@@ -165,7 +212,6 @@ export const CalendarContent = ({
         })}
       </div>
 
-      {/* ✅ ซ่อนปุ่มเลือกเวลาฝั่งขวาถ้าเป็นอุปกรณ์ (hideTimePicker = true) */}
       {!hideTimePicker && (
         <div className="border-t border-slate-100 pt-3 mb-4">
           <button

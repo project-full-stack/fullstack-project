@@ -45,8 +45,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, 
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 shadow-xl w-full max-w-md border border-slate-100">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-3 text-[#1A237E] font-bold text-xl">
-            🔐
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3 p-2">
+            <img src="/images/key.png" alt="Admin Key" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-2xl font-bold text-[#1A237E]">
             เข้าสู่ระบบผู้ดูแลระบบ

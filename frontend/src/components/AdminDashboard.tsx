@@ -4,6 +4,9 @@ import { Language } from '../types';
 interface BookingItem {
   id: number;
   resourceId: number;
+  resourceType?: string;
+  resourceNameTh?: string;
+  resourceNameEn?: string;
   studentName: string;
   studentId: string;
   status: string;
@@ -66,7 +69,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      {/* แถบกรองสถานะ (แสดงผลตรงตามภาษาที่เลือกโดยไม่มีวงเล็บปน) */}
+      {/* แถบกรองสถานะ */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {[
           { key: 'all', th: 'ทั้งหมด', en: 'All' },
@@ -105,7 +108,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                 <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="p-4">ID</th>
                   <th className="p-4">{lang === 'th' ? 'ผู้จอง / รหัสนักศึกษา' : 'Student / ID'}</th>
-                  <th className="p-4">{lang === 'th' ? 'รหัสทรัพยากร' : 'Resource ID'}</th>
+                  <th className="p-4">{lang === 'th' ? 'ชื่อทรัพยากร' : 'Resource Name'}</th>
                   <th className="p-4">{lang === 'th' ? 'วันที่และเวลา' : 'Date & Time'}</th>
                   <th className="p-4">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
                   <th className="p-4 text-center">{lang === 'th' ? 'จัดการ' : 'Actions'}</th>
@@ -120,6 +123,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                     day: 'numeric',
                   });
 
+                  // ตรวจสอบว่าเป็นอุปกรณ์หรือไม่
+                  const isEquipment = b.resourceType?.toLowerCase() === 'equipment' || b.endTime === 'Pickup at Counter';
+
                   return (
                     <tr key={b.id} className="hover:bg-slate-50/50 transition">
                       <td className="p-4 font-semibold text-slate-700">#{b.id}</td>
@@ -127,24 +133,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                         <div className="font-semibold text-slate-800">{b.studentName}</div>
                         <div className="text-xs text-slate-400">{b.studentId}</div>
                       </td>
-                      <td className="p-4 text-slate-600 font-medium">Room/Eq ID: {b.resourceId}</td>
+                      <td className="p-4 text-slate-700 font-semibold">
+                        {lang === 'th' ? (b.resourceNameTh || `ทรัพยากร #${b.resourceId}`) : (b.resourceNameEn || `Resource #${b.resourceId}`)}
+                      </td>
                       <td className="p-4 text-slate-600">
                         <div>{dateStr}</div>
-                        <div className="text-xs text-slate-400">
-                          {lang === 'th' ? (
-                            <>เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.</>
-                          ) : (
-                            (() => {
-                              const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                              const [endH, endM] = b.endTime.split(':').map(Number);
-                              const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
-                              const endAmPm = endH >= 12 ? 'PM' : 'AM';
-                              const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
+                        {!isEquipment && (
+                          <div className="text-xs text-slate-400">
+                            {lang === 'th' ? (
+                              <>เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.</>
+                            ) : (
+                              (() => {
+                                const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                const [endH, endM] = b.endTime.split(':').map(Number);
+                                const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
+                                const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
 
-                              return <>Time {startTimeStr} - {formattedEndTime}</>;
-                            })()
-                          )}
-                        </div>
+                                return <>Time {startTimeStr} - {formattedEndTime}</>;
+                              })()
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="p-4">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${

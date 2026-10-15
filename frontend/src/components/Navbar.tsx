@@ -8,7 +8,7 @@ interface NavbarProps {
   setActiveTab: (tab: 'resources' | 'myBookings' | 'admin') => void;
   isOnline: boolean | null;
   isAdminLoggedIn: boolean;
-  onLogout: () => void; // ✅ เพิ่มรับฟังก์ชันสำหรับกดออกจากระบบ
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setActiveTab, isOnline, isAdminLoggedIn, onLogout }) => {
@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           {lang === 'th' ? 'ทรัพยากรทั้งหมด' : 'All Resources'}
         </button>
 
-        {/* ถ้าแอดมินล็อกอินอยู่ ปุ่มที่สองจะเป็น "ระบบจัดการการจอง" */}
+        {/* ถ้าแอดมินล็อกอินอยู่ ปุ่มที่สองจะเป็น "ระบบจัดการการจอง" พร้อมไอคอน admin.png */}
         {isAdminLoggedIn ? (
           <button
             onClick={() => setActiveTab('admin')}
@@ -45,7 +45,11 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
               activeTab === 'admin' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
             }`}
           >
-            <span>🛠️</span>
+            <img 
+              src="/images/admin.png" 
+              alt="Admin Dashboard" 
+              className={`w-4 h-4 object-contain ${activeTab === 'admin' ? '' : 'brightness-0 invert'}`}
+            />
             {lang === 'th' ? 'ระบบจัดการการจอง' : 'Admin Dashboard'}
           </button>
         ) : (
@@ -88,17 +92,19 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
             onClick={() => setActiveTab('admin')}
             className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-white/20 text-white hover:bg-white/30"
           >
-            <span>🔐</span> {lang === 'th' ? 'ผู้ดูแลระบบ' : 'Admin'}
+            <img src="/images/key.png" alt="Admin Key" className="w-3.5 h-3.5 object-contain brightness-0 invert" /> 
+            {lang === 'th' ? 'ผู้ดูแลระบบ' : 'Admin'}
           </button>
         )}
 
-        {/* ✅ ถ้าล็อกอินเป็นแอดมินแล้ว แสดงปุ่ม "ออกจากระบบ" ตรงนี้แทน */}
+        {/* ถ้าล็อกอินเป็นแอดมินแล้ว แสดงปุ่ม "ออกจากระบบ" พร้อมไอคอน signout.png */}
         {isAdminLoggedIn && (
           <button
             onClick={onLogout}
             className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-rose-500 text-white hover:bg-rose-600"
           >
-            <span>🚪</span> {lang === 'th' ? 'ออกจากระบบ' : 'Sign Out'}
+            <img src="/images/signout.png" alt="Sign Out" className="w-3.5 h-3.5 object-contain brightness-0 invert" /> 
+            {lang === 'th' ? 'ออกจากระบบ' : 'Sign Out'}
           </button>
         )}
         
