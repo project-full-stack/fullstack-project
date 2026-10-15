@@ -153,10 +153,28 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// 4. Get Bookings Endpoint
+// 4. Get Bookings Endpoint (Join กับตาราง resources เพื่อดึงชื่อและประเภทมาแสดงผลที่หน้าแอดมิน)
 app.get('/bookings', async (req, res) => {
   try {
-    const result = await db.select().from(bookings);
+    const result = await db
+      .select({
+        id: bookings.id,
+        resourceId: bookings.resourceId,
+        resourceType: resources.type,
+        resourceNameTh: resources.nameTh,
+        resourceNameEn: resources.nameEn,
+        studentName: bookings.studentName,
+        studentId: bookings.studentId,
+        email: bookings.email,
+        status: bookings.status,
+        bookingDate: bookings.bookingDate,
+        endTime: bookings.endTime,
+        lang: bookings.lang,
+        createdAt: bookings.createdAt,
+      })
+      .from(bookings)
+      .leftJoin(resources, eq(bookings.resourceId, resources.id));
+
     res.json(result);
   } catch (error) {
     console.error(error);

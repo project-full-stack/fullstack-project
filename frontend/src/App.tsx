@@ -40,6 +40,7 @@ export default function App() {
   }, [isAdminLoggedIn]);
 
   const [resources, setResources] = useState<Resource[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]); // ✅ เพิ่ม state เก็บรายการจองทั้งหมด
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -69,15 +70,27 @@ export default function App() {
       });
   };
 
+  // ✅ ฟังก์ชันดึงข้อมูลการจองทั้งหมดเพื่อนำมาเช็กสถานะอุปกรณ์
+  const fetchBookings = () => {
+    fetch(`${API_URL}/bookings`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setBookings(data);
+        }
+      })
+      .catch((err) => console.error(err));
+  };
+
   useEffect(() => {
     if (activeTab === 'resources') {
       fetchResources();
+      fetchBookings(); // ✅ เรียกดึงข้อมูลการจองเมื่ออยู่หน้าทรัพยากร
     }
   }, [filter, activeTab]);
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-      {/* Navbar Component */}
       <Navbar 
         lang={lang} 
         setLang={setLang} 
@@ -93,7 +106,6 @@ export default function App() {
 
       {activeTab === 'resources' ? (
         <>
-          {/* แถบตัวกรองทรัพยากรแบบคลีนๆ ด้านล่าง */}
           <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
               onClick={() => setFilter('')} 
@@ -127,7 +139,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Main Content Grid */}
           <main className="max-w-7xl mx-auto p-6 md:p-10">
             {loading ? (
               <div className="text-center py-16 bg-white rounded-2xl shadow-sm text-slate-500 text-lg">
@@ -139,24 +150,30 @@ export default function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {resources.map((item) => (
-                  <ResourceCard 
-                    key={item.id} 
-                    resource={item} 
-                    lang={lang} 
-                    isAdminLoggedIn={isAdminLoggedIn}
-                    {...(!isAdminLoggedIn && { onBookClick: (res) => setSelectedResource(res) })}
-                  />
-                ))}
+                {resources.map((item) => {
+                  // ✅ เช็กว่าอุปกรณ์ชิ้นนี้ถูกจองไปแล้วหรือยัง (สถานะเป็น pending หรือ approved)
+                  const isBooked = bookings.some(
+                    (b) => b.resourceId === item.id && (b.status === 'pending' || b.status === 'approved')
+                  );
+
+                  return (
+                    <ResourceCard 
+                      key={item.id} 
+                      resource={item} 
+                      lang={lang} 
+                      isAdminLoggedIn={isAdminLoggedIn}
+                      isBooked={isBooked} // ✅ ส่งค่า isBooked เข้าไปที่การ์ด
+                      {...(!isAdminLoggedIn && { onBookClick: (res) => setSelectedResource(res) })}
+                    />
+                  );
+                })}
               </div>
             )}
           </main>
         </>
       ) : activeTab === 'myBookings' ? (
-        /* MyBookings Component (สำหรับผู้ใช้ทั่วไป) */
         <MyBookings lang={lang} apiUrl={API_URL} />
       ) : (
-        /* Admin Section */
         isAdminLoggedIn ? (
           <AdminDashboard 
             lang={lang} 
@@ -172,14 +189,13 @@ export default function App() {
             apiUrl={API_URL} 
             onLoginSuccess={() => {
               setIsAdminLoggedIn(true);
-              setActiveTab('admin'); // ล็อกอินสำเร็จสลับไปหน้า Admin Dashboard ทันที
+              setActiveTab('admin');
             }} 
             onBackToUser={() => setActiveTab('resources')} 
           />
         )
       )}
 
-      {/* Booking Modal Component */}
       <BookingModal 
         selectedResource={selectedResource} 
         lang={lang} 
@@ -187,6 +203,7 @@ export default function App() {
         onClose={() => setSelectedResource(null)} 
         onSuccess={() => {
           fetchResources();
+          fetchBookings(); // ✅ โหลดข้อมูลการจองใหม่หลังจองสำเร็จ
         }} 
       />
     </div>
