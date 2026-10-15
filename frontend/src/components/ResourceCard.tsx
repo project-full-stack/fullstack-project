@@ -7,14 +7,14 @@ interface ResourceCardProps {
   lang: Language;
   onBookClick?: (resource: Resource) => void;
   isAdminLoggedIn?: boolean;
-  isBooked?: boolean; // ✅ เพิ่ม prop เช็กว่าอุปกรณ์ชิ้นนี้ถูกจองไปแล้วหรือยัง
+  isBooked?: boolean;
+  onGenerateQR?: (resource: Resource) => void;
 }
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick, isAdminLoggedIn, isBooked }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick, isAdminLoggedIn, isBooked, onGenerateQR }) => {
   const t = i18n[lang];
   const isRoom = resource.type?.toLowerCase() === 'room';
   
-  // 🖼️ ฟังก์ชันเลือกไฟล์ภาพ .png ให้ถูกต้องตามชื่อทรัพยากรปัจจุบัน
   const getResourceImage = () => {
     const name = resource.nameTh;
     if (isRoom) {
@@ -33,13 +33,11 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
   const displayType = isRoom ? t.room : t.equipment;
   const displayName = lang === 'th' ? resource.nameTh : resource.nameEn;
 
-  // เงื่อนไขสถานะ: ถ้าเป็นอุปกรณ์และถูกจองแล้ว
   const showAsBooked = !isRoom && isBooked;
 
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
       <div>
-        {/* ส่วนหัวข้อ: จัดรูปภาพให้อยู่หน้าข้อความและกึ่งกลางแนวตั้ง */}
         <div className="flex items-center gap-3 mb-4">
           <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-slate-100 rounded-xl p-1.5">
             <img 
@@ -56,7 +54,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
           </h3>
         </div>
 
-        {/* รายละเอียดประเภท */}
         <div className="space-y-2.5 text-xs md:text-sm mb-4 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">{t.type}:</span>
@@ -65,7 +62,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
         </div>
       </div>
 
-      {/* ส่วนสถานะและปุ่มจอง */}
       <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
           showAsBooked 
@@ -79,9 +75,10 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
             : (resource.isActive ? t.available : t.unavailable)}
         </span>
 
-        {/* ✅ ถ้าเป็นแอดมิน จะไม่แสดงปุ่มจอง แต่ถ้าเป็นผู้ใช้ทั่วไปจะแสดงปุ่มจองปกติ (และปิดการกดถ้าถูกจองไปแล้ว) */}
+        {/* ผู้ใช้ทั่วไป: แสดงปุ่มจองปกติ */}
         {!isAdminLoggedIn && (
           <button
+            type="button"
             onClick={() => onBookClick && onBookClick(resource)}
             disabled={!resource.isActive || showAsBooked}
             className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all ${
@@ -93,6 +90,18 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
             {showAsBooked 
               ? (lang === 'th' ? 'ไม่ว่าง' : 'Unavailable') 
               : (lang === 'th' ? 'จองใช้งาน' : 'Book Now')}
+          </button>
+        )}
+
+        {/* แอดมิน: แสดงปุ่มสร้างคิวอาร์พร้อมไอคอน qrcode.png */}
+        {isAdminLoggedIn && !isRoom && showAsBooked && (
+          <button
+            type="button"
+            onClick={() => onGenerateQR && onGenerateQR(resource)}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#1A237E] text-white hover:bg-[#303F9F] shadow-sm transition cursor-pointer flex items-center gap-1.5"
+          >
+            <img src="/images/qrcode.png" alt="QR Code" className="w-4 h-4 object-contain brightness-0 invert" /> 
+            {lang === 'th' ? 'สร้างคิวอาร์' : 'Gen QR'}
           </button>
         )}
       </div>

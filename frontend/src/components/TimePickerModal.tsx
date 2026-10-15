@@ -41,9 +41,10 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
           <button 
             type="button" 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg cursor-pointer flex items-center justify-center"
           >
-            ✕
+            {/* ปรับขนาดไอคอน close.png ให้เล็กลงเหลือ w-3 h-3 */}
+            <img src="/images/close.png" alt="Close" className="w-3 h-3 object-contain" />
           </button>
         </div>
 

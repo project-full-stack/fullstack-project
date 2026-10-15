@@ -4,9 +4,12 @@ import { i18n } from './data/i18n';
 import { Navbar } from './components/Navbar';
 import { ResourceCard } from './components/ResourceCard';
 import { BookingModal } from './components/BookingModal';
+import { QRCodeModal } from './components/QRCodeModal';
 import { MyBookings } from './components/MyBookings';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
+// Import คอมเพเนนต์สำหรับหน้าติดตามยืม-คืน (เราสามารถสร้างไฟล์ TrackingDashboard.tsx เพิ่มเติมได้ครับ)
+import { TrackingDashboard } from './components/TrackingDashboard'; 
 
 export default function App() {
   const API_URL = 'http://localhost:8000';
@@ -22,9 +25,10 @@ export default function App() {
 
   const [filter, setFilter] = useState<string>('');
   
-  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin'>(() => {
+  // ✅ เพิ่ม 'tracking' เข้าไปใน Type ของ activeTab
+  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin' | 'tracking'>(() => {
     const savedTab = localStorage.getItem('app_activeTab');
-    return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin') ? savedTab : 'resources';
+    return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin' || savedTab === 'tracking') ? savedTab : 'resources';
   });
 
   useEffect(() => {
@@ -40,11 +44,12 @@ export default function App() {
   }, [isAdminLoggedIn]);
 
   const [resources, setResources] = useState<Resource[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]); // ✅ เพิ่ม state เก็บรายการจองทั้งหมด
+  const [bookings, setBookings] = useState<any[]>([]);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [selectedQRResource, setSelectedQRResource] = useState<Resource | null>(null);
 
   const t = i18n[lang];
 
@@ -70,7 +75,6 @@ export default function App() {
       });
   };
 
-  // ✅ ฟังก์ชันดึงข้อมูลการจองทั้งหมดเพื่อนำมาเช็กสถานะอุปกรณ์
   const fetchBookings = () => {
     fetch(`${API_URL}/bookings`)
       .then((res) => res.json())
@@ -85,7 +89,7 @@ export default function App() {
   useEffect(() => {
     if (activeTab === 'resources') {
       fetchResources();
-      fetchBookings(); // ✅ เรียกดึงข้อมูลการจองเมื่ออยู่หน้าทรัพยากร
+      fetchBookings();
     }
   }, [filter, activeTab]);
 
@@ -109,7 +113,7 @@ export default function App() {
           <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
               onClick={() => setFilter('')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === '' 
                   ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
                   : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
@@ -119,7 +123,7 @@ export default function App() {
             </button>
             <button 
               onClick={() => setFilter('room')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === 'room' 
                   ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
                   : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
@@ -129,7 +133,7 @@ export default function App() {
             </button>
             <button 
               onClick={() => setFilter('equipment')} 
-              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm ${
+              className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === 'equipment' 
                   ? 'bg-[#1A237E] border-[#1A237E] text-white shadow-sm' 
                   : 'border-slate-200 text-slate-600 hover:border-[#1A237E]'
@@ -151,9 +155,8 @@ export default function App() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {resources.map((item) => {
-                  // ✅ เช็กว่าอุปกรณ์ชิ้นนี้ถูกจองไปแล้วหรือยัง (สถานะเป็น pending หรือ approved)
                   const isBooked = bookings.some(
-                    (b) => b.resourceId === item.id && (b.status === 'pending' || b.status === 'approved')
+                    (b) => b.resourceId === item.id && (b.status === 'pending' || b.status === 'approved' || b.status === 'borrowed')
                   );
 
                   return (
@@ -162,7 +165,8 @@ export default function App() {
                       resource={item} 
                       lang={lang} 
                       isAdminLoggedIn={isAdminLoggedIn}
-                      isBooked={isBooked} // ✅ ส่งค่า isBooked เข้าไปที่การ์ด
+                      isBooked={isBooked}
+                      onGenerateQR={(res) => setSelectedQRResource(res)}
                       {...(!isAdminLoggedIn && { onBookClick: (res) => setSelectedResource(res) })}
                     />
                   );
@@ -173,6 +177,9 @@ export default function App() {
         </>
       ) : activeTab === 'myBookings' ? (
         <MyBookings lang={lang} apiUrl={API_URL} />
+      ) : activeTab === 'tracking' ? (
+        /* ✅ หน้าแสดงผล "ติดตามยืม-คืน" (แยกแท็บย่อย: รายการใช้ห้อง / รายการยืมอุปกรณ์) */
+        <TrackingDashboard lang={lang} apiUrl={API_URL} />
       ) : (
         isAdminLoggedIn ? (
           <AdminDashboard 
@@ -196,6 +203,7 @@ export default function App() {
         )
       )}
 
+      {/* Modal จองสำหรับผู้ใช้ทั่วไป */}
       <BookingModal 
         selectedResource={selectedResource} 
         lang={lang} 
@@ -203,8 +211,21 @@ export default function App() {
         onClose={() => setSelectedResource(null)} 
         onSuccess={() => {
           fetchResources();
-          fetchBookings(); // ✅ โหลดข้อมูลการจองใหม่หลังจองสำเร็จ
+          fetchBookings();
         }} 
+      />
+
+      {/* Modal QR Code สำหรับแอดมินกดรับ/คืนอุปกรณ์ */}
+      <QRCodeModal
+        isOpen={!!selectedQRResource}
+        onClose={() => setSelectedQRResource(null)}
+        resource={selectedQRResource}
+        lang={lang}
+        apiUrl={API_URL}
+        onStatusUpdated={() => {
+          fetchResources();
+          fetchBookings();
+        }}
       />
     </div>
   );
