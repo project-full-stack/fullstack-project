@@ -164,15 +164,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl, on
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleUpdateStatus(b.id, 'approved')}
-                            disabled={b.status === 'approved'}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
+                            disabled={b.status !== 'pending'}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                           >
                             {lang === 'th' ? 'อนุมัติ' : 'Approve'}
                           </button>
                           <button
                             onClick={() => handleUpdateStatus(b.id, 'rejected')}
-                            disabled={b.status === 'rejected'}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-30 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
+                            disabled={b.status !== 'pending'}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                           >
                             {lang === 'th' ? 'ปฏิเสธ' : 'Reject'}
                           </button>

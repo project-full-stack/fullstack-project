@@ -14,6 +14,7 @@ interface BookingModalProps {
 export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, lang, apiUrl, onClose, onSuccess }) => {
   const [studentName, setStudentName] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [email, setEmail] = useState(''); // ✅ เพิ่ม State สำหรับเก็บอีเมล
   const [bookingDate, setBookingDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -42,6 +43,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
   const handleResetAndClose = () => {
     setStudentName('');
     setStudentId('');
+    setEmail(''); // ✅ รีเซ็ตค่าอีเมลเมื่อปิดโมเดล
     setBookingDate('');
     setIsCalendarOpen(false);
     setIsTimeModalOpen(false);
@@ -62,7 +64,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     const pad = (n: number) => String(n).padStart(2, '0');
     const thaiYear = year + (lang === 'th' ? 543 : 0);
     
-    // ถ้ายังไม่กดยืนยันเวลา ให้แสดงแค่วันที่อย่างเดียว
     if (!isConfirmed) {
       setBookingDate(`${pad(day)} ${months[month]} ${thaiYear}`);
     } else {
@@ -84,6 +85,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
     const trimmedName = studentName.trim();
     const trimmedId = studentId.trim();
+    const trimmedEmail = email.trim();
 
     if (!trimmedName) {
       setErrorMsg(
@@ -99,6 +101,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
         lang === 'th' 
           ? 'โปรดกรอกรหัสนักศึกษาให้ถูกต้อง (ต้องเป็นตัวเลข 9 หลัก)' 
           : 'Please enter a valid Student ID (must be exactly 9 digits)'
+      );
+      return;
+    }
+
+    // ✅ ตรวจสอบรูปแบบอีเมลเบื้องต้น
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setErrorMsg(
+        lang === 'th' 
+          ? 'โปรดกรอกอีเมลสำหรับรับการแจ้งเตือนให้ถูกต้อง' 
+          : 'Please enter a valid email for notifications'
       );
       return;
     }
@@ -135,6 +148,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
           resourceId: selectedResource.id,
           studentName: trimmedName,
           studentId: trimmedId,
+          email: trimmedEmail, // ✅ ส่งอีเมลแนบไปกับ Payload
           bookingDate: selectedDateTime.toISOString(),
           endTime: endTime,
         }),
@@ -159,7 +173,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     }
   };
 
-  const isFormIncomplete = !studentName.trim() || studentId.trim().length !== 9 || !isConfirmed;
+  const isFormIncomplete = !studentName.trim() || studentId.trim().length !== 9 || !email.trim() || !isConfirmed;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50 backdrop-blur-sm">
@@ -203,6 +217,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
                   if (errorMsg) setErrorMsg('');
                 }}
                 placeholder="660610000"
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]"
+              />
+            </div>
+
+            {/* ✅ ช่องกรอกอีเมลสำหรับรับการแจ้งเตือน */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                {lang === 'th' ? 'อีเมลสำหรับรับผลการจอง' : 'Email for Notifications'}
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
+                placeholder="student@cmu.ac.th"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]"
               />
             </div>
