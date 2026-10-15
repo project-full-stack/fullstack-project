@@ -1,14 +1,49 @@
 import express from 'express';
 import cors from 'cors';
 import { db } from './db';
-import { resources, bookings, admins } from './db/schema'; // ✅ นำเข้าตาราง admins
+import { resources, bookings, admins } from './db/schema';
 import { eq } from 'drizzle-orm';
+import nodemailer from 'nodemailer'; // ✅ นำเข้า nodemailer
 
 const app = express();
 const PORT = 8000;
 
 app.use(cors());
 app.use(express.json());
+
+// ✅ ตั้งค่าตัวส่งอีเมล (Nodemailer)
+// หมายเหตุ: แนะนำให้ใช้ Gmail และเปิดใช้ App Password 16 หลัก
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'nweeranoi@gmail.com', 
+    pass: 'qwytggggjofgasoh'     
+  }
+});
+
+// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนไปยังผู้จอง
+const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string) => {
+  try {
+    const isApproved = status === 'approved';
+    const subject = isApproved 
+      ? 'แจ้งผลการจอง: การจองของคุณได้รับการอนุมัติแล้ว' 
+      : 'แจ้งผลการจอง: การจองของคุณไม่ผ่านการอนุมัติ';
+    
+    const textMessage = isApproved
+      ? `สวัสดีคุณ ${studentName},\n\nการจองทรัพยากร "${resourceName}" ของคุณได้รับการ "อนุมัติ" เรียบร้อยแล้ว กรุณามารับของหรือเข้าใช้งานตามกำหนดเวลาที่ฝ่ายครับ`
+      : `สวัสดีคุณ ${studentName},\n\nขออภัย การจองทรัพยากร "${resourceName}" ของคุณ "ไม่ผ่านการอนุมัติ" เนื่องจากช่วงเวลาไม่ว่างหรือข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและทำการจองใหม่อีกครั้งครับ`;
+
+    await transporter.sendMail({
+      from: '"Room & Equipment Booking System" <noreply@booking.com>',
+      to: toEmail,
+      subject: subject,
+      text: textMessage,
+    });
+    console.log(`Email sent successfully to ${toEmail}`);
+  } catch (error) {
+    console.error('Failed to send email:', error);
+  }
+};
 
 // 1. Health Check Endpoint
 app.get('/health', (req, res) => {
@@ -34,35 +69,31 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint (รองรับ endTime และระบบป้องกันการจองซ้ำ + เช็คเวลาอดีต)
+// 3. Create Booking Endpoint (รองรับ email, endTime และระบบป้องกันการจองซ้ำ + เช็คเวลาอดีต)
 app.post('/bookings', async (req, res) => {
   try {
-    const { resourceId, studentName, studentId, bookingDate, endTime } = req.body;
+    const { resourceId, studentName, studentId, email, bookingDate, endTime } = req.body;
 
-    if (!resourceId || !studentName || !studentId || !bookingDate || !endTime) {
-      return res.status(400).json({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
+    if (!resourceId || !studentName || !studentId || !email || !bookingDate || !endTime) {
+      return res.status(400).json({ success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วนรวมถึงอีเมล' });
     }
 
     const bookingDateTime = new Date(bookingDate);
     const now = new Date();
 
-    // 1. ตรวจสอบเวลาอดีต
     if (bookingDateTime < now) {
       return res.status(400).json({ success: false, error: 'ไม่สามารถจองวันที่หรือเวลาที่ผ่านไปแล้วได้' });
     }
 
-    // แปลงเวลาสิ้นสุดของการจองใหม่เป็น Date object
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     const bookingEndDateTime = new Date(bookingDateTime);
     bookingEndDateTime.setHours(endHours, endMinutes, 0, 0);
 
-    // 2. ดึงข้อมูลการจองทั้งหมดของทรัพยากรนี้ เพื่อมาเช็คเวลาทับซ้อน
     const existingBookings = await db
       .select()
       .from(bookings)
       .where(eq(bookings.resourceId, Number(resourceId)));
 
-    // 3. วนลูปเช็คช่วงเวลาทับซ้อน (Overlap)
     for (const existing of existingBookings) {
       const existingStart = new Date(existing.bookingDate);
       
@@ -70,7 +101,6 @@ app.post('/bookings', async (req, res) => {
       const existingEnd = new Date(existingStart);
       existingEnd.setHours(exEndHours, exEndMinutes, 0, 0);
 
-      // เงื่อนไขเช็คการทับซ้อน: (StartA < EndB) และ (EndA > StartB)
       const isOverlap = bookingDateTime < existingEnd && bookingEndDateTime > existingStart;
 
       if (isOverlap) {
@@ -81,11 +111,12 @@ app.post('/bookings', async (req, res) => {
       }
     }
 
-    // 4. บันทึกลงฐานข้อมูลเมื่อผ่านการตรวจสอบทั้งหมด
+    // ✅ บันทึกลงฐานข้อมูลรวม email
     const newBooking = await db.insert(bookings).values({
       resourceId: Number(resourceId),
       studentName,
       studentId,
+      email, // บันทึกอีเมล
       bookingDate: bookingDateTime,
       endTime: endTime,
       status: 'pending',
@@ -127,6 +158,7 @@ app.get('/bookings/student/:studentId', async (req, res) => {
         resourceType: resources.type,
         studentName: bookings.studentName,
         studentId: bookings.studentId,
+        email: bookings.email, // ส่งอีเมลกลับไปด้วยถ้าจำเป็น
         status: bookings.status,
         bookingDate: bookings.bookingDate,
         endTime: bookings.endTime,
@@ -168,16 +200,17 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-// 6.2 Update Booking Status Endpoint (Approve / Reject)
+// 6.2 Update Booking Status Endpoint (Approve / Reject) + ส่งอีเมลอัตโนมัติ
 app.patch('/bookings/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // รับค่า 'approved' หรือ 'rejected'
+    const { status } = req.body; // รับค่า 'approved' หรือ 'rejected' (หรือ 'declined')
 
     if (!['approved', 'rejected', 'pending'].includes(status)) {
       return res.status(400).json({ success: false, error: 'สถานะไม่ถูกต้อง' });
     }
 
+    // 1. อัปเดตสถานะในฐานข้อมูล
     const updated = await db
       .update(bookings)
       .set({ status })
@@ -188,7 +221,22 @@ app.patch('/bookings/:id/status', async (req, res) => {
       return res.status(404).json({ success: false, error: 'ไม่พบรายการจองนี้' });
     }
 
-    res.json({ success: true, message: 'อัปเดตสถานะสำเร็จ', data: updated[0] });
+    const bookingInfo = updated[0];
+
+    // ดึงชื่อทรัพยากรมาแสดงในเนื้อหาอีเมลให้ชัดเจน
+    const resourceInfo = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, bookingInfo.resourceId));
+    
+    const resourceName = resourceInfo.length > 0 ? resourceInfo[0].nameTh : 'ทรัพยากร';
+
+    // 2. ✅ ส่งอีเมลแจ้งเตือนไปยังผู้จองทันทีที่ Admin เปลี่ยนสถานะ (ถ้ามีอีเมล)
+    if (bookingInfo.email) {
+      await sendBookingEmail(bookingInfo.email, bookingInfo.studentName, status, resourceName);
+    }
+
+    res.json({ success: true, message: 'อัปเดตสถานะและส่งอีเมลแจ้งเตือนสำเร็จ', data: bookingInfo });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'Internal Server Error' });
