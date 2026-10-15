@@ -8,7 +8,6 @@ import { QRCodeModal } from './components/QRCodeModal';
 import { MyBookings } from './components/MyBookings';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
-// Import คอมเพเนนต์สำหรับหน้าติดตามยืม-คืน (เราสามารถสร้างไฟล์ TrackingDashboard.tsx เพิ่มเติมได้ครับ)
 import { TrackingDashboard } from './components/TrackingDashboard'; 
 
 export default function App() {
@@ -25,7 +24,6 @@ export default function App() {
 
   const [filter, setFilter] = useState<string>('');
   
-  // ✅ เพิ่ม 'tracking' เข้าไปใน Type ของ activeTab
   const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin' | 'tracking'>(() => {
     const savedTab = localStorage.getItem('app_activeTab');
     return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin' || savedTab === 'tracking') ? savedTab : 'resources';
@@ -58,6 +56,37 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setIsOnline(data.ok))
       .catch(() => setIsOnline(false));
+  }, []);
+
+  // ✅ ตรวจสอบ URL พารามิเตอร์เมื่อมีการสแกน QR Code เข้ามา พร้อมรับค่าจำนวนวัน (days) และอัปเดตอัตโนมัติ
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const bookingId = params.get('query') || params.get('bookingId');
+    const days = params.get('days') || '3';
+
+    if (action === 'pickup' && bookingId) {
+      fetch(`${API_URL}/bookings/${bookingId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'borrowed', borrowDays: Number(days) }),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            fetchResources();
+            fetchBookings();
+            alert(lang === 'th' ? `✓ ยืนยันการยืมอุปกรณ์สำเร็จ (กำหนด ${days} วัน)!` : `✓ Equipment pickup confirmed (${days} days)!`);
+          } else {
+            alert(result.error || (lang === 'th' ? 'ไม่สามารถอัปเดตสถานะได้' : 'Failed to update status'));
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .catch((err) => {
+          console.error(err);
+          alert(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error');
+        });
+    }
   }, []);
 
   const fetchResources = () => {
@@ -112,6 +141,7 @@ export default function App() {
         <>
           <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
+              type="button"
               onClick={() => setFilter('')} 
               className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === '' 
@@ -122,6 +152,7 @@ export default function App() {
               {t.btnAll}
             </button>
             <button 
+              type="button"
               onClick={() => setFilter('room')} 
               className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === 'room' 
@@ -132,6 +163,7 @@ export default function App() {
               {t.btnRoom}
             </button>
             <button 
+              type="button"
               onClick={() => setFilter('equipment')} 
               className={`px-6 py-2 rounded-full border-2 font-medium transition text-sm cursor-pointer ${
                 filter === 'equipment' 
@@ -178,7 +210,6 @@ export default function App() {
       ) : activeTab === 'myBookings' ? (
         <MyBookings lang={lang} apiUrl={API_URL} />
       ) : activeTab === 'tracking' ? (
-        /* ✅ หน้าแสดงผล "ติดตามยืม-คืน" (แยกแท็บย่อย: รายการใช้ห้อง / รายการยืมอุปกรณ์) */
         <TrackingDashboard lang={lang} apiUrl={API_URL} />
       ) : (
         isAdminLoggedIn ? (
