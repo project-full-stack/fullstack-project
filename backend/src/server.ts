@@ -8,10 +8,11 @@ import nodemailer from 'nodemailer';
 const app = express();
 const PORT = 8000;
 
+// 🛡️ ตั้งค่า Middleware พื้นฐาน (CORS และ JSON Parser)
 app.use(cors());
 app.use(express.json());
 
-// ✅ ตั้งค่าตัวส่งอีเมล (Nodemailer)
+// 📧 ตั้งค่าตัวส่งอีเมล (Nodemailer สำหรับแจ้งเตือนสถานะการจอง)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -20,7 +21,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนรองรับทุกสถานะ (แยกตามภาษา TH / EN และประเภททรัพยากร)
+// ✉️ ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนรองรับทุกสถานะ (แยกภาษา TH / EN และประเภททรัพยากร)
 const sendBookingEmail = async (toEmail: string, studentName: string, status: string, resourceName: string, resourceType: string, lang: string = 'th', borrowDays?: number) => {
   try {
     const isThai = lang === 'th';
@@ -83,12 +84,16 @@ const sendBookingEmail = async (toEmail: string, studentName: string, status: st
   }
 };
 
-// 1. Health Check Endpoint
+// ==========================================
+// API ENDPOINTS
+// ==========================================
+
+// 1. Health Check Endpoint (ตรวจสอบสถานะเซิร์ฟเวอร์)
 app.get('/health', (req, res) => {
   res.json({ ok: true, message: 'Backend is running smoothly' });
 });
 
-// 2. Get Resources Endpoint
+// 2. Get Resources Endpoint (ดึงข้อมูลทรัพยากรทั้งหมด หรือกรองตามประเภท room/equipment)
 app.get('/resources', async (req, res) => {
   try {
     const { type } = req.query;
@@ -107,7 +112,7 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint (เปิดให้จองช่วงเวลาซ้ำได้เพื่อรอแอดมินตรวจสอบ)
+// 3. Create Booking Endpoint (สร้างรายการจองใหม่ - สถานะเริ่มต้นเป็น pending)
 app.post('/bookings', async (req, res) => {
   try {
     const { resourceId, studentName, studentId, email, bookingDate, endTime, lang } = req.body;
@@ -145,7 +150,7 @@ app.post('/bookings', async (req, res) => {
   }
 });
 
-// 4. Get Bookings Endpoint
+// 4. Get Bookings Endpoint (ดึงข้อมูลการจองทั้งหมดพร้อม Join ข้อมูลทรัพยากร)
 app.get('/bookings', async (req, res) => {
   try {
     const result = await db
@@ -175,7 +180,7 @@ app.get('/bookings', async (req, res) => {
   }
 });
 
-// 5. Get Bookings by Student ID Endpoint
+// 5. Get Bookings by Student ID Endpoint (ค้นหาประวัติการจองตามรหัสนักศึกษา 9 หลัก)
 app.get('/bookings/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -211,7 +216,7 @@ app.get('/bookings/student/:studentId', async (req, res) => {
 // 6. ADMIN ENDPOINTS
 // ==========================================
 
-// 6.1 Admin Login Endpoint
+// 6.1 Admin Login Endpoint (ตรวจสอบการเข้าสู่ระบบของผู้ดูแลระบบ)
 app.post('/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -232,7 +237,7 @@ app.post('/admin/login', async (req, res) => {
   }
 });
 
-// 6.2 Update Booking Status Endpoint (Approve / Reject / Borrowed / Returned) + ส่งอีเมลทุกสถานะ
+// 6.2 Update Booking Status Endpoint (เปลี่ยนสถานะการจอง พร้อมส่งอีเมลแจ้งเตือนอัตโนมัติ)
 app.patch('/bookings/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
@@ -271,7 +276,7 @@ app.patch('/bookings/:id/status', async (req, res) => {
       : 'Resource';
     const resourceType = currentResource ? currentResource.type : 'equipment';
 
-    // ✅ ส่งอีเมลแจ้งเตือนทุกสถานะที่เปลี่ยน (พร้อมจัดการ type ให้ปลอดภัย)
+    // 📧 ส่งอีเมลแจ้งเตือนตามสถานะที่เปลี่ยนไป
     if (bookingInfo.email) {
       await sendBookingEmail(
         bookingInfo.email, 
@@ -291,7 +296,7 @@ app.patch('/bookings/:id/status', async (req, res) => {
   }
 });
 
-// 6.3 Endpoint สำหรับส่งอีเมลเตือนทวงคืน (Overdue / Remind) แยกตามภาษา
+// 6.3 Send Reminder Email Endpoint (ส่งอีเมลเตือนทวงคืนอุปกรณ์ Overdue)
 app.post('/bookings/:id/remind', async (req, res) => {
   try {
     const { id } = req.params;
@@ -338,6 +343,7 @@ app.post('/bookings/:id/remind', async (req, res) => {
   }
 });
 
+// 🚀 เริ่มรันเซิร์ฟเวอร์
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
