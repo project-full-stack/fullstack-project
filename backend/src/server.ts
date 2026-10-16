@@ -6,18 +6,19 @@ import { eq } from 'drizzle-orm';
 import nodemailer from 'nodemailer';
 
 const app = express();
-const PORT = 8000;
+// ⚙️ รองรับการอ่านพอร์ตจาก Environment Variable (หรือใช้ 8000 เป็นค่าเริ่มต้น)
+const PORT = process.env.PORT || 8003;
 
 // 🛡️ ตั้งค่า Middleware พื้นฐาน (CORS และ JSON Parser)
 app.use(cors());
 app.use(express.json());
 
-// 📧 ตั้งค่าตัวส่งอีเมล (Nodemailer สำหรับแจ้งเตือนสถานะการจอง)
+// 📧 ตั้งค่าตัวส่งอีเมล (Nodemailer โดยดึงค่าผ่าน Environment Variable เพื่อความปลอดภัย)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'nweeranoi@gmail.com', 
-    pass: 'qwytggggjofgasoh'    
+    user: process.env.EMAIL_USER || 'nweeranoi@gmail.com', 
+    pass: process.env.EMAIL_PASS || 'qwytggggjofgasoh'    
   }
 });
 
@@ -345,5 +346,5 @@ app.post('/bookings/:id/remind', async (req, res) => {
 
 // 🚀 เริ่มรันเซิร์ฟเวอร์
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
