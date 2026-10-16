@@ -107,7 +107,7 @@ app.get('/resources', async (req, res) => {
   }
 });
 
-// 3. Create Booking Endpoint
+// 3. Create Booking Endpoint (เปิดให้จองช่วงเวลาซ้ำได้เพื่อรอแอดมินตรวจสอบ)
 app.post('/bookings', async (req, res) => {
   try {
     const { resourceId, studentName, studentId, email, bookingDate, endTime, lang } = req.body;
@@ -121,33 +121,6 @@ app.post('/bookings', async (req, res) => {
 
     if (bookingDateTime < now) {
       return res.status(400).json({ success: false, error: 'ไม่สามารถจองวันที่หรือเวลาที่ผ่านไปแล้วได้' });
-    }
-
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    const bookingEndDateTime = new Date(bookingDateTime);
-    bookingEndDateTime.setHours(endHours, endMinutes, 0, 0);
-
-    const existingBookings = await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.resourceId, Number(resourceId)));
-
-    for (const existing of existingBookings) {
-      if (existing.status === 'returned' || existing.status === 'rejected') continue;
-
-      const existingStart = new Date(existing.bookingDate);
-      const [exEndHours, exEndMinutes] = existing.endTime.split(':').map(Number);
-      const existingEnd = new Date(existingStart);
-      existingEnd.setHours(exEndHours, exEndMinutes, 0, 0);
-
-      const isOverlap = bookingDateTime < existingEnd && bookingEndDateTime > existingStart;
-
-      if (isOverlap) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'ช่วงเวลานี้ถูกจองไปแล้วในระบบ กรุณาเลือกช่วงเวลาอื่น' 
-        });
-      }
     }
 
     const newBooking = await db.insert(bookings).values({
