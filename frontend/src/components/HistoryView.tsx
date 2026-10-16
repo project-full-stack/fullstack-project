@@ -11,6 +11,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 📥 โหลดข้อมูลประวัติการจองและทรัพยากรทั้งหมดเมื่อคอมโพเนนต์ถูกเรนเดอร์
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -34,10 +35,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
     fetchData();
   }, [apiUrl]);
 
+  // 🔍 ค้นหารายละเอียดของทรัพยากรตาม ID
   const getResourceDetails = (resourceId: string | number) => {
     return resources.find((r) => String(r.id) === String(resourceId));
   };
 
+  // ⏳ ตรวจสอบว่าห้องที่จองหมดเวลาใช้งานไปแล้วหรือยัง
   const isRoomExpired = (booking: any, resource: Resource | undefined) => {
     if (!resource || resource.type !== 'room') return false;
     
@@ -50,16 +53,19 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
     return bookingDate < now;
   };
 
+  // 💻 กรองเฉพาะประวัติการคืนอุปกรณ์ (Equipment ที่สถานะเป็น returned)
   const returnedEquipmentBookings = bookings.filter((b) => {
     const res = getResourceDetails(b.resourceId);
     return res && res.type === 'equipment' && b.status === 'returned';
   });
 
+  // 🏢 กรองเฉพาะประวัติการใช้ห้องที่หมดเวลาแล้ว (Room ที่อนุมัติ/คืนแล้ว และวันที่ผ่านมาแล้ว)
   const expiredRoomBookings = bookings.filter((b) => {
     const res = getResourceDetails(b.resourceId);
     return res && res.type === 'room' && (b.status === 'approved' || b.status === 'returned') && isRoomExpired(b, res);
   });
 
+  // ⏳ แสดงข้อความระหว่างโหลดข้อมูล
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center text-slate-400 text-sm">
@@ -70,7 +76,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-in fade-in duration-200">
-      {/* ส่วนที่ 1: ประวัติการคืนอุปกรณ์ */}
+      
+      {/* 📦 ส่วนที่ 1: ประวัติการคืนอุปกรณ์ (Returned Equipment History) */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">
@@ -127,7 +134,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
         )}
       </div>
 
-      {/* ส่วนที่ 2: ประวัติการใช้ห้อง (หมดเวลาใช้งาน) */}
+      {/* 🏢 ส่วนที่ 2: ประวัติการใช้ห้องที่ผ่านมา (Completed Room Bookings) */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">

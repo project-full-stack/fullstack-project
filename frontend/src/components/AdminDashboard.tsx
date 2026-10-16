@@ -27,6 +27,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
+  // 📥 ฟังก์ชันดึงข้อมูลการจองและทรัพยากรทั้งหมด
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -50,6 +51,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     fetchData();
   }, [apiUrl]);
 
+  // 🔄 ฟังก์ชันอัปเดตสถานะการจอง (อนุมัติ / ปฏิเสธ)
   const handleUpdateStatus = async (id: number, newStatus: 'approved' | 'rejected') => {
     try {
       const res = await fetch(`${apiUrl}/bookings/${id}/status`, {
@@ -69,10 +71,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     }
   };
 
+  // 🔍 ค้นหารายละเอียดทรัพยากรตาม ID
   const getResourceDetails = (resourceId: number | string) => {
     return resources.find((r) => String(r.id) === String(resourceId));
   };
 
+  // ⏳ ตรวจสอบว่าห้องที่จองหมดเวลาใช้งานไปแล้วหรือยัง
   const isRoomExpired = (booking: BookingItem, resource: Resource | undefined) => {
     if (!resource || resource.type !== 'room') return false;
     const bookingDateStr = booking.bookingDate;
@@ -83,7 +87,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     return bookingDate < now;
   };
 
-  // กรองซ่อนรายการที่คืนแล้ว (returned) หรือห้องที่หมดเวลาแล้ว ออกจากหน้าจัดการหลัก
+  // 🛡️ กรองซ่อนรายการที่คืนแล้ว (returned) หรือห้องที่หมดเวลาแล้ว ออกจากหน้าจัดการหลัก
   const activeDashboardBookings = bookings.filter((b) => {
     const res = getResourceDetails(b.resourceId);
     
@@ -98,6 +102,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     return true;
   });
 
+  // 🏷️ กรองรายการตามสถานะที่เลือกบนแถบ Filter
   const filteredBookings = activeDashboardBookings.filter(b => {
     if (filterStatus === 'all') return true;
     return b.status === filterStatus;
@@ -105,7 +110,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      {/* แถบกรองสถานะ */}
+      
+      {/* 🎛️ แถบปุ่มกรองสถานะการจอง (All, Pending, Approved, Rejected) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {[
           { key: 'all', th: 'ทั้งหมด', en: 'All' },
@@ -115,6 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
         ].map((item) => (
           <button
             key={item.key}
+            type="button"
             onClick={() => setFilterStatus(item.key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold capitalize transition cursor-pointer ${
               filterStatus === item.key
@@ -127,7 +134,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
         ))}
       </div>
 
-      {/* ตารางแสดงรายการจอง */}
+      {/* 📋 ตารางแสดงรายการจองสำหรับผู้ดูแลระบบ */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400">
@@ -238,12 +245,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                         {b.status === 'pending' ? (
                           <div className="flex items-center justify-center gap-2">
                             <button
+                              type="button"
                               onClick={() => handleUpdateStatus(b.id, 'approved')}
                               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                             >
                               {lang === 'th' ? 'อนุมัติ' : 'Approve'}
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleUpdateStatus(b.id, 'rejected')}
                               className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                             >

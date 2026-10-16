@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Resource, Language } from '../types';
+import { Language, Resource } from '../types';
 import { Calendar, CalendarContent } from './Calendar';
 import { TimePickerModal } from './TimePickerModal';
 
@@ -12,29 +12,34 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, lang, apiUrl, onClose, onSuccess }) => {
+  // 📝 State สำหรับเก็บข้อมูลฟอร์มผู้ใช้งาน
   const [studentName, setStudentName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [email, setEmail] = useState(''); 
   const [bookingDate, setBookingDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // 📅 State สำหรับควบคุมการเปิด/ปิดปฏิทินและ Modal เลือกเวลา
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
-  
   const [isTimeSelected, setIsTimeSelected] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  // สำหรับอุปกรณ์: เก็บแค่วันที่เลือกวันเดียว
+  // 📦 สำหรับอุปกรณ์: เก็บแค่วันที่เลือกวันเดียว
   const [equipmentDate, setEquipmentDate] = useState<Date | null>(null);
 
+  // 🗓️ ตั้งค่าเริ่มต้นวันที่แสดงในปฏิทิน
   const currentDate = new Date();
   const [viewYear, setViewYear] = useState(currentDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(currentDate.getMonth());
   const [selectedDay, setSelectedDay] = useState(currentDate.getDate());
   
+  // ⏰ เวลาเริ่มต้นและเวลาสิ้นสุดสำหรับการจองห้อง
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
 
+  // 🌐 ชุดข้อความเดือนและวันในสัปดาห์ (รองรับ TH / EN)
   const monthsTh = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const months = lang === 'th' ? monthsTh : monthsEn;
@@ -45,6 +50,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
   const isEquipment = selectedResource?.type === 'equipment';
 
+  // 🔄 รีเซ็ตค่าทั้งหมดและปิด Modal
   const handleResetAndClose = () => {
     setStudentName('');
     setStudentId('');
@@ -61,6 +67,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     onClose();
   };
 
+  // 👆 ฟังก์ชันเมื่อผู้ใช้คลิกเลือกวันในปฏิทิน
   const handleSelectDay = (day: number) => {
     setSelectedDay(day);
     const clickedDate = new Date(viewYear, viewMonth, day);
@@ -76,6 +83,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     }
   };
 
+  // 🕒 อัปเดตข้อความแสดงวันที่และเวลาในช่องกรอก
   const updateDateTime = (year: number, month: number, day: number, start: string, end: string) => {
     const pad = (n: number) => String(n).padStart(2, '0');
     const thaiYear = year + (lang === 'th' ? 543 : 0);
@@ -87,6 +95,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     }
   };
 
+  // อัปเดตเวลาอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่าเวลาหรือวันที่
   React.useEffect(() => {
     if (!isEquipment && isConfirmed) {
       updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
@@ -95,6 +104,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
   if (!selectedResource) return null;
 
+  // 🚀 ฟังก์ชันส่งข้อมูลการจองไปยัง Backend
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -103,6 +113,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     const trimmedId = studentId.trim();
     const trimmedEmail = email.trim();
 
+    // ตรวจสอบความถูกต้องของข้อมูลฟอร์ม
     if (!trimmedName) {
       setErrorMsg(lang === 'th' ? 'โปรดกรอกชื่อ-นามสกุล' : 'Please enter your Full Name');
       return;
@@ -180,7 +191,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50 backdrop-blur-sm">
       <div className={`bg-white rounded-3xl p-6 shadow-xl relative animate-in fade-in zoom-in transition-all duration-300 ease-in-out flex flex-col md:flex-row items-start gap-6 ${isCalendarOpen ? 'md:max-w-185 w-full' : 'w-full max-w-100'}`}>
         
-        {/* ฝั่งซ้าย: ฟอร์มกรอกข้อมูล */}
+        {/* 📋 ฝั่งซ้าย: ฟอร์มกรอกข้อมูลการจอง */}
         <div className="w-full md:w-87.5 shrink-0">
           <h3 className="text-lg font-bold mb-2 text-[#1A237E]">
             {lang === 'th' ? 'ยืนยันการจอง: ' : 'Confirm Booking: '} {lang === 'th' ? selectedResource.nameTh : selectedResource.nameEn}
@@ -190,6 +201,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
           </p>
 
           <form onSubmit={handleBookingSubmit} className="space-y-4">
+            {/* ชื่อ-นามสกุล */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 {lang === 'th' ? 'ชื่อ-นามสกุล' : 'Full Name'}
@@ -204,6 +216,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               />
             </div>
 
+            {/* รหัสนักศึกษา */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 {lang === 'th' ? 'รหัสนักศึกษา' : 'Student ID'}
@@ -222,6 +235,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               />
             </div>
 
+            {/* อีเมลสำหรับรับผล */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 {lang === 'th' ? 'อีเมลสำหรับรับผลการจอง' : 'Email for Notifications'}
@@ -239,6 +253,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               />
             </div>
 
+            {/* วันที่และเวลา */}
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
                 {lang === 'th' ? (isEquipment ? 'วันที่ต้องการยืมอุปกรณ์' : 'วันที่และเวลาที่ต้องการจอง') : (isEquipment ? 'Booking Date' : 'Booking Date & Time')}
@@ -260,6 +275,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               />
             </div>
 
+            {/* ข้อความแจ้งเตือน Error */}
             {errorMsg && (
               <p className="text-rose-500 text-xs font-medium mt-1 flex items-center gap-1.5">
                 <img src="/images/warning.png" alt="Warning" className="w-4 h-4 object-contain" />
@@ -267,6 +283,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
               </p>
             )}
 
+            {/* ปุ่มยกเลิกและยืนยันการจอง */}
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -290,7 +307,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
           </form>
         </div>
 
-        {/* ฝั่งขวา: ปฏิทิน */}
+        {/* 🗓️ ฝั่งขวา: ปฏิทินเลือกวันและเวลา */}
         {isCalendarOpen && (
           <div className="w-full md:w-80 shrink-0 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 animate-in fade-in zoom-in duration-150">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
@@ -337,6 +354,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
 
       </div>
 
+      {/* Modal ย่อยสำหรับเลือกช่วงเวลา (สำหรับจองห้อง) */}
       {!isEquipment && (
         <TimePickerModal
           lang={lang}

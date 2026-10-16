@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Resource, Language } from '../types';
+import { Language, Resource } from '../types';
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const [borrowDays, setBorrowDays] = useState<string>('3');
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // 📥 โหลดข้อมูลการจองที่เกี่ยวข้องกับทรัพยากรนี้เมื่อเปิด Modal
   useEffect(() => {
     if (isOpen && resource) {
       setLoading(true);
@@ -45,6 +46,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
   if (!isOpen || !resource) return null;
 
+  // 🔄 ฟังก์ชันอัปเดตสถานะการจอง (เช่น เมื่อแอดมินกดยืนยันการคืนอุปกรณ์)
   const handleUpdateStatus = async (newStatus: 'returned') => {
     if (!booking) return;
     setActionLoading(true);
@@ -71,11 +73,13 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
   const displayName = lang === 'th' ? resource.nameTh : resource.nameEn;
 
+  // 🔗 สร้าง URL ปลายทางสำหรับฝังใน QR Code เพื่อให้สแกนรับอุปกรณ์
   const appFrontendUrl = window.location.origin; 
   const qrTargetUrl = booking 
     ? `${appFrontendUrl}/?action=pickup&bookingId=${booking.id}&days=${borrowDays}`
     : '';
 
+  // 🖼️ สร้าง Image URL สำหรับดึง QR Code จาก API ภายนอก (qrserver.com)
   const qrDataUrl = qrTargetUrl 
     ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrTargetUrl)}`
     : '';
@@ -84,6 +88,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     ? new Date(booking.bookingDate).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })
     : '';
 
+  // 🏷️ แปลงข้อความสถานะการจองเป็นภาษาไทย/อังกฤษ
   const getStatusText = (status: string) => {
     if (lang === 'th') {
       if (status === 'approved') return 'อนุมัติแล้ว';
@@ -98,6 +103,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-150">
+        
+        {/* ส่วนหัว Modal */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-base font-bold text-[#1A237E] text-left">
             {lang === 'th' ? 'คิวอาร์โค้ดรับอุปกรณ์' : 'Equipment QR Code'}
@@ -113,6 +120,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           )}
         </div>
 
+        {/* 🔄 สถานะการโหลด หรือกรณีไม่พบข้อมูลการจอง */}
         {loading ? (
           <div className="py-12 text-slate-400 text-sm">
             {lang === 'th' ? 'กำลังโหลดข้อมูลการจอง...' : 'Loading booking info...'}
@@ -131,6 +139,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </button>
           </div>
         ) : isSuccess ? (
+          /* ✅ หน้าจอแสดงผลเมื่อทำรายการสำเร็จ */
           <div className="py-6 space-y-4 flex flex-col items-center">
             <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center p-2 shadow-inner">
               <img 
@@ -162,6 +171,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </button>
           </div>
         ) : (
+          /* 📱 หน้าจอแสดง QR Code และรายละเอียดการจอง */
           <div className="space-y-4">
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-left text-xs space-y-1.5">
               <div className="font-bold text-slate-800 text-sm">{displayName}</div>
@@ -177,10 +187,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               </div>
             </div>
 
+            {/* กรอบแสดงรูปภาพ QR Code */}
             <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-slate-200 inline-block shadow-2xs">
               <img src={qrDataUrl} alt="QR Code" className="w-48 h-48 mx-auto object-contain" />
             </div>
 
+            {/* ช่องกรอกกำหนดจำนวนวันที่ยืม */}
             {booking.status !== 'borrowed' && (
               <div className="text-left bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
                 <label className="block text-xs font-semibold text-slate-700">
@@ -202,6 +214,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                 : 'Scan this QR Code with a mobile camera to confirm pickup immediately.'}
             </p>
 
+            {/* ปุ่มยืนยันการคืนอุปกรณ์ (แสดงเฉพาะเมื่อสถานะเป็นกำลังยืม) */}
             {booking.status === 'borrowed' && (
               <div className="pt-2">
                 <button

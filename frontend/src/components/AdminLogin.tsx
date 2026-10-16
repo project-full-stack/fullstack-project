@@ -9,11 +9,13 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, onBackToUser }) => {
+  // 🔐 State สำหรับเก็บชื่อผู้ใช้ รหัสผ่าน สถานะการโหลด และข้อความแจ้งเตือน
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // 🚀 ฟังก์ชันจัดการการเข้าสู่ระบบผู้ดูแลระบบ (Admin Login)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -44,6 +46,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 shadow-xl w-full max-w-md border border-slate-100">
+        
+        {/* ส่วนหัว Form ล็อกอิน */}
         <div className="text-center mb-6">
           <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3 p-2">
             <img src="/images/key.png" alt="Admin Key" className="w-full h-full object-contain" />
@@ -56,6 +60,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, 
           </p>
         </div>
 
+        {/* ฟอร์มกรอก Username และ Password */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -85,12 +90,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ apiUrl, onLoginSuccess, 
             />
           </div>
 
+          {/* ข้อความแจ้งเตือน Error เมื่อล็อกอินไม่ผ่าน */}
           {errorMsg && (
             <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-500 text-xs font-medium">
               {errorMsg}
             </div>
           )}
 
+          {/* ปุ่มดำเนินการ (เข้าสู่ระบบ / กลับหน้าหลัก) */}
           <div className="pt-2 flex flex-col gap-2">
             <button
               type="submit"
