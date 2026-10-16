@@ -9,6 +9,7 @@ import { MyBookings } from './components/MyBookings';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { TrackingDashboard } from './components/TrackingDashboard'; 
+import { HistoryView } from './components/HistoryView';
 
 export default function App() {
   const API_URL = 'http://localhost:8000';
@@ -24,9 +25,9 @@ export default function App() {
 
   const [filter, setFilter] = useState<string>('');
   
-  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin' | 'tracking'>(() => {
+  const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin' | 'tracking' | 'history'>(() => {
     const savedTab = localStorage.getItem('app_activeTab');
-    return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin' || savedTab === 'tracking') ? savedTab : 'resources';
+    return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin' || savedTab === 'tracking' || savedTab === 'history') ? savedTab : 'resources';
   });
 
   useEffect(() => {
@@ -58,7 +59,6 @@ export default function App() {
       .catch(() => setIsOnline(false));
   }, []);
 
-  // ✅ ตรวจสอบ URL พารามิเตอร์เมื่อมีการสแกน QR Code เข้ามา พร้อมรับค่าจำนวนวัน (days) และอัปเดตอัตโนมัติ
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
@@ -199,7 +199,7 @@ export default function App() {
                       isAdminLoggedIn={isAdminLoggedIn}
                       isBooked={isBooked}
                       onGenerateQR={(res) => setSelectedQRResource(res)}
-                      {...(!isAdminLoggedIn && { onBookClick: (res) => setSelectedResource(res) })}
+                      onBookClick={!isAdminLoggedIn ? (res) => setSelectedResource(res) : undefined}
                     />
                   );
                 })}
@@ -211,6 +211,8 @@ export default function App() {
         <MyBookings lang={lang} apiUrl={API_URL} />
       ) : activeTab === 'tracking' ? (
         <TrackingDashboard lang={lang} apiUrl={API_URL} />
+      ) : activeTab === 'history' ? (
+        <HistoryView lang={lang} apiUrl={API_URL} />
       ) : (
         isAdminLoggedIn ? (
           <AdminDashboard 

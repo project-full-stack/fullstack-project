@@ -4,8 +4,8 @@ import { Language } from '../types';
 interface NavbarProps {
   lang: Language;
   setLang: (lang: Language) => void;
-  activeTab: 'resources' | 'myBookings' | 'admin' | 'tracking';
-  setActiveTab: (tab: 'resources' | 'myBookings' | 'admin' | 'tracking') => void;
+  activeTab: 'resources' | 'myBookings' | 'admin' | 'tracking' | 'history';
+  setActiveTab: (tab: 'resources' | 'myBookings' | 'admin' | 'tracking' | 'history') => void;
   isOnline: boolean | null;
   isAdminLoggedIn: boolean;
   onLogout: () => void;
@@ -22,10 +22,10 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
       </div>
 
       {/* เมนูสลับหน้า (Tabs) */}
-      <div className="flex bg-white/10 p-1 rounded-full gap-1">
+      <div className="flex bg-white/10 p-1 rounded-full gap-1 flex-wrap justify-center">
         <button
           onClick={() => setActiveTab('resources')}
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
             activeTab === 'resources' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
           }`}
         >
@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           <>
             <button
               onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
                 activeTab === 'admin' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
               }`}
             >
@@ -53,25 +53,40 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
               {lang === 'th' ? 'ระบบจัดการการจอง' : 'Admin Dashboard'}
             </button>
 
-            {/* ✅ แท็บที่ 3 สำหรับแอดมิน: ติดตามยืม-คืน */}
+            {/* ✅ เปลี่ยนไอคอนติดตามยืม-คืน เป็น follow.png */}
             <button
               onClick={() => setActiveTab('tracking')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
                 activeTab === 'tracking' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
               }`}
             >
               <img 
-                src="/images/history.png" 
+                src="/images/follow.png" 
                 alt="Tracking" 
                 className={`w-4 h-4 object-contain ${activeTab === 'tracking' ? '' : 'brightness-0 invert'}`}
               />
               {lang === 'th' ? 'ติดตามยืม-คืน' : 'Tracking'}
             </button>
+
+            {/* ประวัติการใช้งาน */}
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
+                activeTab === 'history' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
+              }`}
+            >
+              <img 
+                src="/images/history.png" 
+                alt="History" 
+                className={`w-4 h-4 object-contain ${activeTab === 'history' ? '' : 'brightness-0 invert'}`}
+              />
+              {lang === 'th' ? 'ประวัติการใช้งาน' : 'Usage History'}
+            </button>
           </>
         ) : (
           <button
             onClick={() => setActiveTab('myBookings')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
               activeTab === 'myBookings' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
             }`}
           >
