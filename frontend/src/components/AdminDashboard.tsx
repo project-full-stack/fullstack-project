@@ -61,11 +61,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
       if (res.ok && result.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
       } else {
-        alert(result.error || 'ไม่สามารถอัปเดตสถานะได้');
+        alert(result.error || (lang === 'th' ? 'ไม่สามารถอัปเดตสถานะได้' : 'Failed to update status'));
       }
     } catch (error) {
       console.error(error);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+      alert(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์' : 'Server connection error');
     }
   };
 
@@ -73,7 +73,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     return resources.find((r) => String(r.id) === String(resourceId));
   };
 
-  // เช็กว่าห้องหมดเวลาใช้งานไปแล้วหรือยัง
   const isRoomExpired = (booking: BookingItem, resource: Resource | undefined) => {
     if (!resource || resource.type !== 'room') return false;
     const bookingDateStr = booking.bookingDate;
@@ -84,16 +83,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
     return bookingDate < now;
   };
 
-  // ✅ กรองซ่อนรายการที่คืนแล้ว (returned) หรือห้องที่หมดเวลาแล้ว ออกจากหน้าจัดการหลัก
+  // กรองซ่อนรายการที่คืนแล้ว (returned) หรือห้องที่หมดเวลาแล้ว ออกจากหน้าจัดการหลัก
   const activeDashboardBookings = bookings.filter((b) => {
     const res = getResourceDetails(b.resourceId);
     
-    // ถ้าอุปกรณ์คืนแล้ว ซ่อนทันที
     if (res && res.type === 'equipment' && b.status === 'returned') {
       return false;
     }
     
-    // ถ้าเป็นห้อง และผ่านเวลาใช้งานไปแล้ว ซ่อนทันที
     if (res && res.type === 'room' && (b.status === 'approved' || b.status === 'returned') && isRoomExpired(b, res)) {
       return false;
     }
@@ -111,10 +108,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
       {/* แถบกรองสถานะ */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {[
-          { key: 'all', th: 'ทั้งหมด' },
-          { key: 'pending', th: 'รออนุมัติ' },
-          { key: 'approved', th: 'อนุมัติแล้ว' },
-          { key: 'rejected', th: 'ปฏิเสธ' },
+          { key: 'all', th: 'ทั้งหมด', en: 'All' },
+          { key: 'pending', th: 'รออนุมัติ', en: 'Pending' },
+          { key: 'approved', th: 'อนุมัติแล้ว', en: 'Approved' },
+          { key: 'rejected', th: 'ปฏิเสธ', en: 'Rejected' },
         ].map((item) => (
           <button
             key={item.key}
@@ -125,7 +122,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            {item.th}
+            {lang === 'th' ? item.th : item.en}
           </button>
         ))}
       </div>
@@ -134,11 +131,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400">
-            กำลังโหลดข้อมูล...
+            {lang === 'th' ? 'กำลังโหลดข้อมูล...' : 'Loading bookings...'}
           </div>
         ) : filteredBookings.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
-            ไม่พบรายการจองในสถานะนี้
+            {lang === 'th' ? 'ไม่พบรายการจองในสถานะนี้' : 'No bookings found'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -146,17 +143,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="p-4">ID</th>
-                  <th className="p-4">ผู้จอง / รหัสนักศึกษา</th>
-                  <th className="p-4">ชื่อทรัพยากร</th>
-                  <th className="p-4">วันที่และเวลา</th>
-                  <th className="p-4">สถานะ</th>
-                  <th className="p-4 text-center">จัดการ</th>
+                  <th className="p-4">{lang === 'th' ? 'ผู้จอง / รหัสนักศึกษา' : 'User / Student ID'}</th>
+                  <th className="p-4">{lang === 'th' ? 'ชื่อทรัพยากร' : 'Resource Name'}</th>
+                  <th className="p-4">{lang === 'th' ? 'วันที่และเวลา' : 'Date & Time'}</th>
+                  <th className="p-4">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
+                  <th className="p-4 text-center">{lang === 'th' ? 'จัดการ' : 'Actions'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {filteredBookings.map((b) => {
                   const dateObj = new Date(b.bookingDate);
-                  const dateStr = dateObj.toLocaleDateString('th-TH', {
+                  const dateStr = dateObj.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
@@ -173,13 +170,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                         <div className="text-xs text-slate-400">{b.studentId}</div>
                       </td>
                       <td className="p-4 text-slate-700 font-semibold">
-                        {res ? res.nameTh : `ทรัพยากร #${b.resourceId}`}
+                        {res ? (lang === 'th' ? res.nameTh : res.nameEn) : `Resource #${b.resourceId}`}
                       </td>
                       <td className="p-4 text-slate-600">
                         <div>{dateStr}</div>
                         {!isEquipment && (
                           <div className="text-xs text-slate-400">
-                            เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.
+                            {lang === 'th' ? (
+                              <>เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.</>
+                            ) : (
+                              (() => {
+                                const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                const [endH, endM] = b.endTime.split(':').map(Number);
+                                const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
+                                const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
+                                return <>Time {startTimeStr} - {formattedEndTime}</>;
+                              })()
+                            )}
                           </div>
                         )}
                       </td>
@@ -189,9 +197,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                           b.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
                           'bg-amber-50 text-amber-600 border border-amber-100'
                         }`}>
-                          {b.status === 'approved' && 'อนุมัติแล้ว'}
-                          {b.status === 'rejected' && 'ปฏิเสธ'}
-                          {b.status === 'pending' && 'รออนุมัติ'}
+                          {b.status === 'approved' && (lang === 'th' ? 'อนุมัติแล้ว' : 'Approved')}
+                          {b.status === 'rejected' && (lang === 'th' ? 'ปฏิเสธ' : 'Rejected')}
+                          {b.status === 'pending' && (lang === 'th' ? 'รออนุมัติ' : 'Pending')}
                         </span>
                       </td>
                       <td className="p-4 text-center">
@@ -201,18 +209,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                               onClick={() => handleUpdateStatus(b.id, 'approved')}
                               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                             >
-                              อนุมัติ
+                              {lang === 'th' ? 'อนุมัติ' : 'Approve'}
                             </button>
                             <button
                               onClick={() => handleUpdateStatus(b.id, 'rejected')}
                               className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
                             >
-                              ปฏิเสธ
+                              {lang === 'th' ? 'ปฏิเสธ' : 'Reject'}
                             </button>
                           </div>
                         ) : (
                           <span className="text-xs text-slate-400 font-medium">
-                            {b.status === 'approved' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว'}
+                            {b.status === 'approved' 
+                              ? (lang === 'th' ? 'อนุมัติแล้ว' : 'Approved') 
+                              : (lang === 'th' ? 'ปฏิเสธแล้ว' : 'Rejected')}
                           </span>
                         )}
                       </td>

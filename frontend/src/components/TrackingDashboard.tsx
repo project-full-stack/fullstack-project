@@ -34,7 +34,6 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
     fetchData();
   }, [apiUrl]);
 
-  // ฟังก์ชันส่งอีเมลทวงคืน
   const handleSendReminder = async (bookingId: number) => {
     setActionLoadingId(bookingId);
     try {
@@ -149,7 +148,7 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
                     day: 'numeric',
                   });
 
-                  const startTimeStr = startDate.toLocaleTimeString(lang === 'th' ? 'th-TH' : 'en-US', {
+                  const startTimeStr = startDate.toLocaleTimeString('th-TH', {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false,
@@ -173,9 +172,18 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
                               ? (lang === 'th' ? `ยืมจำนวน ${b.borrowDays} วัน` : `Borrow for ${b.borrowDays} days`)
                               : (lang === 'th' ? 'รอรับอุปกรณ์' : 'Ready for pickup')
                           ) : (
-                            lang === 'th' 
-                              ? `เวลา ${startTimeStr} - ${b.endTime} น.` 
-                              : `${startTimeStr} - ${b.endTime}`
+                            lang === 'th' ? (
+                              <>เวลา {startTimeStr} น. - {b.endTime} น.</>
+                            ) : (
+                              (() => {
+                                const startEN = startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                const [endH, endM] = b.endTime.split(':').map(Number);
+                                const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
+                                const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
+                                return <>{startEN} - {formattedEndTime}</>;
+                              })()
+                            )
                           )}
                         </div>
                       </td>

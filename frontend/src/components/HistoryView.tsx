@@ -63,7 +63,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center text-slate-400 text-sm">
-        กำลังโหลดข้อมูลประวัติการใช้งาน...
+        {lang === 'th' ? 'กำลังโหลดข้อมูลประวัติการใช้งาน...' : 'Loading usage history...'}
       </div>
     );
   }
@@ -74,27 +74,27 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">
-            ประวัติการคืนอุปกรณ์
+            {lang === 'th' ? 'ประวัติการคืนอุปกรณ์' : 'Returned Equipment History'}
           </h3>
           <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full">
-            {returnedEquipmentBookings.length} รายการ
+            {returnedEquipmentBookings.length} {lang === 'th' ? 'รายการ' : (returnedEquipmentBookings.length === 1 ? 'item' : 'items')}
           </span>
         </div>
 
         {returnedEquipmentBookings.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            ยังไม่มีประวัติการคืนอุปกรณ์
+            {lang === 'th' ? 'ยังไม่มีประวัติการคืนอุปกรณ์' : 'No returned equipment history found.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-medium">
-                  <th className="py-3 px-6">รหัสการจอง</th>
-                  <th className="py-3 px-6">ผู้จอง</th>
-                  <th className="py-3 px-6">อุปกรณ์</th>
-                  <th className="py-3 px-6">วันที่ยืม-คืน</th>
-                  <th className="py-3 px-6 text-center">สถานะ</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'รหัสการจอง' : 'Booking ID'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'ผู้จอง' : 'User'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'อุปกรณ์' : 'Equipment'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'วันที่ยืม-คืน' : 'Date'}</th>
+                  <th className="py-3 px-6 text-center">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -111,11 +111,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
                         {lang === 'th' ? res?.nameTh : res?.nameEn}
                       </td>
                       <td className="py-3 px-6 text-slate-500">
-                        {new Date(b.bookingDate || b.date).toLocaleDateString('th-TH')}
+                        {new Date(b.bookingDate || b.date).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US')}
                       </td>
                       <td className="py-3 px-6 text-center">
                         <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-semibold rounded-full text-[11px]">
-                          คืนแล้ว
+                          {lang === 'th' ? 'คืนแล้ว' : 'Returned'}
                         </span>
                       </td>
                     </tr>
@@ -131,27 +131,27 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800">
-            ประวัติการใช้ห้องที่ผ่านมา
+            {lang === 'th' ? 'ประวัติการใช้ห้องที่ผ่านมา' : 'Completed Room Bookings'}
           </h3>
           <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full">
-            {expiredRoomBookings.length} รายการ
+            {expiredRoomBookings.length} {lang === 'th' ? 'รายการ' : (expiredRoomBookings.length === 1 ? 'item' : 'items')}
           </span>
         </div>
 
         {expiredRoomBookings.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-xs">
-            ยังไม่มีประวัติการใช้ห้องที่หมดเวลา
+            {lang === 'th' ? 'ยังไม่มีประวัติการใช้ห้องที่หมดเวลา' : 'No completed room history found.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-medium">
-                  <th className="py-3 px-6">รหัสการจอง</th>
-                  <th className="py-3 px-6">ผู้จอง</th>
-                  <th className="py-3 px-6">ห้องประชุม / พื้นที่</th>
-                  <th className="py-3 px-6">วันที่ใช้งาน</th>
-                  <th className="py-3 px-6 text-center">สถานะ</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'รหัสการจอง' : 'Booking ID'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'ผู้จอง' : 'User'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'ห้องประชุม / พื้นที่' : 'Room / Area'}</th>
+                  <th className="py-3 px-6">{lang === 'th' ? 'วันที่ใช้งาน' : 'Date'}</th>
+                  <th className="py-3 px-6 text-center">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -168,12 +168,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ lang, apiUrl }) => {
                         {lang === 'th' ? res?.nameTh : res?.nameEn}
                       </td>
                       <td className="py-3 px-6 text-slate-500">
-                        {new Date(b.bookingDate || b.date).toLocaleDateString('th-TH')}
+                        {new Date(b.bookingDate || b.date).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US')}
                         {b.timeSlot && <span className="block text-slate-400 text-[11px]">{b.timeSlot}</span>}
                       </td>
                       <td className="py-3 px-6 text-center">
                         <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-semibold rounded-full text-[11px]">
-                          ใช้งานแล้ว (เสร็จสิ้น)
+                          {lang === 'th' ? 'ใช้งานแล้ว (เสร็จสิ้น)' : 'Completed'}
                         </span>
                       </td>
                     </tr>
