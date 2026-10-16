@@ -138,12 +138,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
       bookingStartDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
     }
 
-    const now = new Date();
-    if (bookingStartDateTime < now && !isEquipment) {
-      setErrorMsg(lang === 'th' ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' : 'Cannot select past date or time');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -169,7 +163,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
       } else {
         setErrorMsg(
           (lang === 'th' ? 'การจองไม่สำเร็จ: ' : 'Booking failed: ') + 
-          (result.error || (lang === 'th' ? 'ช่วงเวลานี้ถูกจองไปแล้วในระบบ' : 'This time slot is already booked'))
+          (result.error || (lang === 'th' ? 'ไม่สามารถทำรายการได้' : 'Unable to complete booking'))
         );
       }
     } catch (error) {
@@ -330,15 +324,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ selectedResource, la
                     alert(lang === 'th' ? 'กรุณาเลือกเวลาก่อนกดตกลง' : 'Please select time before confirming');
                     return;
                   }
-                  const [hours, minutes] = startTime.split(':').map(Number);
-                  const selectedDateTime = new Date(viewYear, viewMonth, selectedDay, hours, minutes);
-                  const now = new Date();
-
-                  if (selectedDateTime < now) {
-                    alert(lang === 'th' ? 'ไม่สามารถเลือกวันที่หรือเวลาที่ผ่านไปแล้วได้' : 'Cannot select past date or time');
-                    return;
-                  }
-
                   setIsConfirmed(true);
                   updateDateTime(viewYear, viewMonth, selectedDay, startTime, endTime);
                   setIsCalendarOpen(false);
