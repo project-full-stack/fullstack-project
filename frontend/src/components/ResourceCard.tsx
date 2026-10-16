@@ -9,9 +9,10 @@ interface ResourceCardProps {
   isAdminLoggedIn?: boolean;
   isBooked?: boolean;
   onGenerateQR?: (resource: Resource) => void;
+  onViewStatus?: (resource: Resource) => void;
 }
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick, isAdminLoggedIn, isBooked, onGenerateQR }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBookClick, isAdminLoggedIn, isBooked, onGenerateQR, onViewStatus }) => {
   const t = i18n[lang];
   const isRoom = resource.type?.toLowerCase() === 'room';
   
@@ -36,9 +37,20 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
   const showAsBooked = !isRoom && isBooked;
 
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative">
       <div>
-        <div className="flex items-center gap-3 mb-4">
+        {/* ✅ ปุ่มมุมขวาบน ใช้ไอคอน status.png */}
+        <button
+          type="button"
+          onClick={() => onViewStatus && onViewStatus(resource)}
+          className="absolute top-4 right-4 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[11px] font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+          title={lang === 'th' ? 'ดูสถานะการจอง' : 'View Booking Status'}
+        >
+          <img src="/images/status.png" alt="Status" className="w-3.5 h-3.5 object-contain" />
+          <span>{lang === 'th' ? 'สถานะ' : 'Status'}</span>
+        </button>
+
+        <div className="flex items-center gap-3 mb-4 pr-16">
           <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-slate-100 rounded-xl p-1.5">
             <img 
               src={getResourceImage()} 
@@ -75,7 +87,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
             : (resource.isActive ? t.available : t.unavailable)}
         </span>
 
-        {/* ผู้ใช้ทั่วไป: แสดงปุ่มจองปกติ */}
         {!isAdminLoggedIn && (
           <button
             type="button"
@@ -93,7 +104,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, lang, onBo
           </button>
         )}
 
-        {/* แอดมิน: แสดงปุ่มสร้างคิวอาร์พร้อมไอคอน qrcode.png */}
         {isAdminLoggedIn && !isRoom && showAsBooked && (
           <button
             type="button"
