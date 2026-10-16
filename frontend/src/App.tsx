@@ -49,6 +49,9 @@ export default function App() {
 
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [selectedQRResource, setSelectedQRResource] = useState<Resource | null>(null);
+  
+  // State สำหรับควบคุม Sidebar แสดงสถานะ Real-time ของทรัพยากรที่เลือก
+  const [statusDrawerResource, setStatusDrawerResource] = useState<Resource | null>(null);
 
   const t = i18n[lang];
 
@@ -200,6 +203,7 @@ export default function App() {
                       isBooked={isBooked}
                       onGenerateQR={(res) => setSelectedQRResource(res)}
                       onBookClick={!isAdminLoggedIn ? (res) => setSelectedResource(res) : undefined}
+                      onViewStatus={(res) => setStatusDrawerResource(res)}
                     />
                   );
                 })}
@@ -234,6 +238,78 @@ export default function App() {
             onBackToUser={() => setActiveTab('resources')} 
           />
         )
+      )}
+
+      {/* Sidebar Drawer แสดงสถานะการจองแบบ Real-time ของทรัพยากรนั้นๆ */}
+      {statusDrawerResource && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex justify-end backdrop-blur-xs transition-opacity animate-in fade-in">
+          <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-6 animate-in slide-in-from-right duration-300 overflow-hidden">
+            
+            {/* ส่วนหัว (ตรึงไว้ ไม่เลื่อนตาม) */}
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {lang === 'th' ? 'สถานะการจอง: ' : 'Booking Status: '}
+                  <span className="text-[#1A237E]">{lang === 'th' ? statusDrawerResource.nameTh : statusDrawerResource.nameEn}</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {lang === 'th' ? 'รายการจองทั้งหมดแบบเรียลไทม์' : 'Real-time active bookings'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStatusDrawerResource(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+              >
+                <img src="/images/close.png" alt="Close" className="w-4 h-4 object-contain" />
+              </button>
+            </div>
+
+            {/* ส่วนรายการตรงกลาง (ให้เลื่อนเฉพาะด้านในตรงนี้) */}
+            <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+              {bookings.filter(b => String(b.resourceId) === String(statusDrawerResource.id) && b.status !== 'returned' && b.status !== 'rejected').length === 0 ? (
+                <div className="text-center py-16 text-slate-400 text-xs">
+                  {lang === 'th' ? 'ไม่มีรายการจองค้างในขณะนี้ (ว่าง)' : 'No active bookings currently.'}
+                </div>
+              ) : (
+                bookings
+                  .filter(b => String(b.resourceId) === String(statusDrawerResource.id) && b.status !== 'returned' && b.status !== 'rejected')
+                  .map((b) => {
+                    const dateObj = new Date(b.bookingDate);
+                    const dateStr = dateObj.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    });
+
+                    return (
+                      <div key={b.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/70 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-semibold text-slate-500">#{b.id} - {b.studentName}</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            b.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                            b.status === 'borrowed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {b.status === 'approved' && (lang === 'th' ? 'อนุมัติแล้ว' : 'Approved')}
+                            {b.status === 'borrowed' && (lang === 'th' ? 'กำลังยืมอยู่' : 'Borrowed')}
+                            {b.status === 'pending' && (lang === 'th' ? 'รออนุมัติ' : 'Pending')}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-600 space-y-0.5">
+                          <div>{lang === 'th' ? 'วันที่ใช้งาน: ' : 'Date: '}{dateStr}</div>
+                          {b.endTime && b.endTime !== 'Pickup at Counter' && (
+                            <div>{lang === 'th' ? `${dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${b.endTime} น.` : `${dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })} - ${b.endTime}`}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+          </div>
+        </div>
       )}
 
       {/* Modal จองสำหรับผู้ใช้ทั่วไป */}

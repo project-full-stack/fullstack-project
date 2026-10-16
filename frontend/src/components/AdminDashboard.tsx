@@ -173,20 +173,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, apiUrl }) 
                         {res ? (lang === 'th' ? res.nameTh : res.nameEn) : `Resource #${b.resourceId}`}
                       </td>
                       <td className="p-4 text-slate-600">
-                        <div>{dateStr}</div>
-                        {!isEquipment && (
-                          <div className="text-xs text-slate-400">
-                            {lang === 'th' ? (
-                              <>เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.</>
-                            ) : (
-                              (() => {
-                                const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                                const [endH, endM] = b.endTime.split(':').map(Number);
-                                const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
-                                const endAmPm = endH >= 12 ? 'PM' : 'AM';
-                                const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
-                                return <>Time {startTimeStr} - {formattedEndTime}</>;
-                              })()
+                        {b.status === 'pending' ? (
+                          <div>
+                            <div className="font-medium text-slate-500 text-xs">
+                              {lang === 'th' ? 'กดจองเมื่อ: ' : 'Booked at: '} 
+                              {b.createdAt ? new Date(b.createdAt).toLocaleString(lang === 'th' ? 'th-TH' : 'en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: lang === 'en',
+                              }) : '-'} {lang === 'th' && 'น.'}
+                            </div>
+                            <div className="text-slate-400 mt-0.5 text-xs">
+                              {lang === 'th' ? (
+                                <>ใช้งาน: {dateStr} (เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.)</>
+                              ) : (
+                                (() => {
+                                  const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                  const [endH, endM] = b.endTime.split(':').map(Number);
+                                  const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
+                                  const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                  const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
+                                  return <>Usage: {dateStr} ({startTimeStr} - {formattedEndTime})</>;
+                                })()
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div>{dateStr}</div>
+                            {!isEquipment && (
+                              <div className="text-xs text-slate-400">
+                                {lang === 'th' ? (
+                                  <>เวลา {dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} น. - {b.endTime} น.</>
+                                ) : (
+                                  (() => {
+                                    const startTimeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                    const [endH, endM] = b.endTime.split(':').map(Number);
+                                    const endHour12 = endH % 12 === 0 ? 12 : endH % 12;
+                                    const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                    const formattedEndTime = `${String(endHour12).padStart(2, '0')}:${String(endM).padStart(2, '0')} ${endAmPm}`;
+                                    return <>Time {startTimeStr} - {formattedEndTime}</>;
+                                  })()
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
