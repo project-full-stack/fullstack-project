@@ -11,19 +11,30 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setActiveTab, isOnline, isAdminLoggedIn, onLogout }) => {
+export const Navbar: React.FC<NavbarProps> = ({ 
+  lang, 
+  setLang, 
+  activeTab, 
+  setActiveTab, 
+  isOnline, 
+  isAdminLoggedIn, 
+  onLogout 
+}) => {
   return (
     <header className="bg-[#1A237E] text-white px-6 md:px-10 py-4 flex flex-col lg:flex-row justify-between items-center gap-4 shadow-md sticky top-0 z-40">
-      {/* ชื่อระบบ */}
+      
+      {/* 🏷️ ส่วนหัวชื่อระบบ */}
       <div className="flex items-center gap-3">
         <h2 className="text-lg md:text-xl font-bold tracking-wide whitespace-nowrap">
           {lang === 'th' ? 'ระบบจองห้องและอุปกรณ์' : 'Room & Equipment Booking'}
         </h2>
       </div>
 
-      {/* เมนูสลับหน้า (Tabs) */}
+      {/* 🧭 แถบเมนูนำทาง (Tabs) สำหรับสลับหน้าจอ */}
       <div className="flex bg-white/10 p-1 rounded-full gap-1 flex-wrap justify-center">
+        {/* เมนูหน้าหลัก: ทรัพยากรทั้งหมด */}
         <button
+          type="button"
           onClick={() => setActiveTab('resources')}
           className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
             activeTab === 'resources' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
@@ -37,9 +48,11 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           {lang === 'th' ? 'ทรัพยากรทั้งหมด' : 'All Resources'}
         </button>
 
+        {/* เมนูเฉพาะแอดมิน (แสดงเมื่อเข้าสู่ระบบแอดมินแล้ว) */}
         {isAdminLoggedIn ? (
           <>
             <button
+              type="button"
               onClick={() => setActiveTab('admin')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
                 activeTab === 'admin' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
@@ -53,8 +66,9 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
               {lang === 'th' ? 'ระบบจัดการการจอง' : 'Admin Dashboard'}
             </button>
 
-            {/* ✅ เปลี่ยนไอคอนติดตามยืม-คืน เป็น follow.png */}
+            {/* เมนูติดตามการยืม-คืน (ใช้ไอคอน follow.png) */}
             <button
+              type="button"
               onClick={() => setActiveTab('tracking')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
                 activeTab === 'tracking' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
@@ -68,8 +82,9 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
               {lang === 'th' ? 'ติดตามยืม-คืน' : 'Tracking'}
             </button>
 
-            {/* ประวัติการใช้งาน */}
+            {/* เมนูประวัติการใช้งานทั้งหมด */}
             <button
+              type="button"
               onClick={() => setActiveTab('history')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
                 activeTab === 'history' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
@@ -84,7 +99,9 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
             </button>
           </>
         ) : (
+          /* เมนูสำหรับผู้ใช้ทั่วไป: ประวัติการจองของฉัน */
           <button
+            type="button"
             onClick={() => setActiveTab('myBookings')}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition cursor-pointer ${
               activeTab === 'myBookings' ? 'bg-white text-[#1A237E] shadow-sm font-semibold' : 'text-white hover:bg-white/10'
@@ -100,8 +117,9 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
         )}
       </div>
 
-      {/* ฝั่งขวา: สถานะออนไลน์, ปุ่ม Admin / Sign Out และเปลี่ยนภาษา */}
+      {/* ⚙️ ส่วนขวา: สถานะออนไลน์, ปุ่ม Admin / Sign Out และสลับภาษา */}
       <div className="flex items-center gap-3 flex-wrap justify-center">
+        {/* ป้ายแสดงสถานะเซิร์ฟเวอร์ออนไลน์/ออฟไลน์ */}
         <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-sm flex items-center gap-2 ${
           isOnline === null 
             ? 'bg-slate-200 text-slate-600' 
@@ -117,8 +135,10 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
             : (lang === 'th' ? 'ออฟไลน์' : 'Offline')}
         </span>
 
+        {/* ปุ่มเข้าสู่ระบบแอดมิน (แสดงเมื่อยังไม่ได้ล็อกอิน) */}
         {!isAdminLoggedIn && (
           <button
+            type="button"
             onClick={() => setActiveTab('admin')}
             className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-white/20 text-white hover:bg-white/30"
           >
@@ -127,8 +147,10 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           </button>
         )}
 
+        {/* ปุ่มออกจากระบบ (แสดงเมื่อแอดมินล็อกอินแล้ว) */}
         {isAdminLoggedIn && (
           <button
+            type="button"
             onClick={onLogout}
             className="px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer bg-rose-500 text-white hover:bg-rose-600"
           >
@@ -137,14 +159,17 @@ export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, activeTab, setAct
           </button>
         )}
         
+        {/* ปุ่มสลับภาษา (TH / EN) */}
         <div className="bg-white/20 p-1 rounded-full flex gap-1">
           <button 
+            type="button"
             onClick={() => setLang('th')} 
             className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${lang === 'th' ? 'bg-white text-[#1A237E] shadow' : 'text-white hover:bg-white/10'}`}
           >
             TH
           </button>
           <button 
+            type="button"
             onClick={() => setLang('en')} 
             className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${lang === 'en' ? 'bg-white text-[#1A237E] shadow' : 'text-white hover:bg-white/10'}`}
           >

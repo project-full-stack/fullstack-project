@@ -12,8 +12,10 @@ import { TrackingDashboard } from './components/TrackingDashboard';
 import { HistoryView } from './components/HistoryView';
 
 export default function App() {
+  // 🔗 API Endpoint สำหรับเชื่อมต่อ Backend (สำหรับกลุ่ม 3 สามารถปรับเปลี่ยน URL/Port ตามจริงตอน Deploy)
   const API_URL = 'http://localhost:8000';
   
+  // 🌐 จัดการภาษาของแอปพลิเคชัน (รองรับ TH / EN)
   const [lang, setLang] = useState<Language>(() => {
     const savedLang = localStorage.getItem('app_lang');
     return (savedLang === 'en' || savedLang === 'th') ? savedLang : 'th';
@@ -23,8 +25,10 @@ export default function App() {
     localStorage.setItem('app_lang', lang);
   }, [lang]);
 
+  // 🏷️ ตัวกรองประเภททรัพยากร ('', 'room', 'equipment')
   const [filter, setFilter] = useState<string>('');
   
+  // 📑 แท็บการใช้งานปัจจุบัน
   const [activeTab, setActiveTab] = useState<'resources' | 'myBookings' | 'admin' | 'tracking' | 'history'>(() => {
     const savedTab = localStorage.getItem('app_activeTab');
     return (savedTab === 'resources' || savedTab === 'myBookings' || savedTab === 'admin' || savedTab === 'tracking' || savedTab === 'history') ? savedTab : 'resources';
@@ -34,6 +38,7 @@ export default function App() {
     localStorage.setItem('app_activeTab', activeTab);
   }, [activeTab]);
 
+  // 🔐 สถานะการเข้าสู่ระบบของแอดมิน
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('app_isAdminLoggedIn') === 'true';
   });
@@ -42,19 +47,20 @@ export default function App() {
     localStorage.setItem('app_isAdminLoggedIn', String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
 
+  // 📦 ข้อมูลทรัพยากรและการจอง
   const [resources, setResources] = useState<Resource[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // 🪟 State สำหรับ Modal และ Sidebar แสดงสถานะ
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [selectedQRResource, setSelectedQRResource] = useState<Resource | null>(null);
-  
-  // State สำหรับควบคุม Sidebar แสดงสถานะ Real-time ของทรัพยากรที่เลือก
   const [statusDrawerResource, setStatusDrawerResource] = useState<Resource | null>(null);
 
   const t = i18n[lang];
 
+  // 🩺 ตรวจสอบสถานะการเชื่อมต่อ Backend (Health Check)
   useEffect(() => {
     fetch(`${API_URL}/health`)
       .then((res) => res.json())
@@ -62,6 +68,7 @@ export default function App() {
       .catch(() => setIsOnline(false));
   }, []);
 
+  // ⚡ จัดการ Action พิเศษผ่าน URL Query (เช่น การสแกน QR เพื่อรับอุปกรณ์)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
@@ -92,6 +99,7 @@ export default function App() {
     }
   }, []);
 
+  // 📥 ฟังก์ชันดึงข้อมูลทรัพยากรจาก Backend
   const fetchResources = () => {
     setLoading(true);
     const url = filter ? `${API_URL}/resources?type=${filter}` : `${API_URL}/resources`;
@@ -107,6 +115,7 @@ export default function App() {
       });
   };
 
+  // 📥 ฟังก์ชันดึงข้อมูลการจองทั้งหมดจาก Backend
   const fetchBookings = () => {
     fetch(`${API_URL}/bookings`)
       .then((res) => res.json())
@@ -118,6 +127,7 @@ export default function App() {
       .catch((err) => console.error(err));
   };
 
+  // 🔄 โหลดข้อมูลใหม่เมื่อเปลี่ยนแท็บหรือตัวกรอง
   useEffect(() => {
     if (activeTab === 'resources') {
       fetchResources();
@@ -127,6 +137,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
+      {/* Navbar ด้านบน */}
       <Navbar 
         lang={lang} 
         setLang={setLang} 
@@ -140,8 +151,10 @@ export default function App() {
         }}
       />
 
+      {/* เนื้อหาหลักตามแท็บที่เลือก */}
       {activeTab === 'resources' ? (
         <>
+          {/* แถบตัวกรองประเภททรัพยากร */}
           <div className="bg-white px-6 md:px-10 py-4 border-b border-slate-200 flex gap-3 shadow-xs">
             <button 
               type="button"
@@ -178,6 +191,7 @@ export default function App() {
             </button>
           </div>
 
+          {/* แสดงการ์ดรายการทรัพยากร */}
           <main className="max-w-7xl mx-auto p-6 md:p-10">
             {loading ? (
               <div className="text-center py-16 bg-white rounded-2xl shadow-sm text-slate-500 text-lg">
@@ -240,12 +254,12 @@ export default function App() {
         )
       )}
 
-      {/* Sidebar Drawer แสดงสถานะการจองแบบ Real-time ของทรัพยากรนั้นๆ */}
+      {/* 📊 Sidebar Drawer สำหรับดูสถานะการจองแบบ Real-time ของแต่ละทรัพยากร */}
       {statusDrawerResource && (
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end backdrop-blur-xs transition-opacity animate-in fade-in">
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-6 animate-in slide-in-from-right duration-300 overflow-hidden">
             
-            {/* ส่วนหัว (ตรึงไว้ ไม่เลื่อนตาม) */}
+            {/* ส่วนหัว Sidebar (ตรึงไว้ด้านบน ไม่เลื่อนตาม) */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
@@ -265,7 +279,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* ส่วนรายการตรงกลาง (ให้เลื่อนเฉพาะด้านในตรงนี้) */}
+            {/* ส่วนเนื้อหาภายใน (ให้เลื่อน Scrollbar เฉพาะพื้นที่ตรงนี้) */}
             <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
               {bookings.filter(b => String(b.resourceId) === String(statusDrawerResource.id) && b.status !== 'returned' && b.status !== 'rejected').length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs">
@@ -312,7 +326,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal จองสำหรับผู้ใช้ทั่วไป */}
+      {/* Modal ฟอร์มสำหรับผู้ใช้ทั่วไปกดจอง */}
       <BookingModal 
         selectedResource={selectedResource} 
         lang={lang} 
@@ -324,7 +338,7 @@ export default function App() {
         }} 
       />
 
-      {/* Modal QR Code สำหรับแอดมินกดรับ/คืนอุปกรณ์ */}
+      {/* Modal QR Code สำหรับแอดมินใช้ตรวจสอบและเปลี่ยนสถานะ */}
       <QRCodeModal
         isOpen={!!selectedQRResource}
         onClose={() => setSelectedQRResource(null)}

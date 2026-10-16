@@ -36,6 +36,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <div className="space-y-2.5">
+      {/* 📅 ปุ่มเปิด/ปิดช่องเลือกวันที่ */}
       <div className="relative">
         <button
           type="button"
@@ -49,6 +50,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         </button>
       </div>
 
+      {/* ⏰ แถบแสดงเวลาที่เลือกแล้ว (แสดงเมื่อยืนยันแล้วและไม่ได้ซ่อนตัวเลือกเวลา) */}
       {!hideTimePicker && isConfirmed && !isOpen && (
         <div>
           <button
@@ -67,6 +69,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         </div>
       )}
 
+      {/* Modal เลือกช่วงเวลา */}
       <TimePickerModal
         lang={lang}
         isOpen={isTimeModalOpen}
@@ -103,6 +106,7 @@ export const CalendarContent = ({
   isTimeSelected,
   hideTimePicker
 }: any) => {
+  // 🗓️ ฟังก์ชันคำนวณวันหยุดนักขัตฤกษ์ตามปี
   const getHolidaysForYear = (year: number) => {
     const fixedHolidays = [
       `${year}-01-01`,
@@ -145,6 +149,7 @@ export const CalendarContent = ({
 
   return (
     <div>
+      {/* ◀️ หัวข้อเดือนและปุ่มเลื่อนเดือนก่อนหน้า/ถัดไป ▶️ */}
       <div className="flex justify-between items-center mb-3">
         <button
           type="button"
@@ -173,10 +178,12 @@ export const CalendarContent = ({
         </button>
       </div>
 
+      {/* 📅 หัวตารางแสดงวันในสัปดาห์ */}
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-400 mb-2">
         {daysHeader.map((d: string, i: number) => (<span key={i}>{d}</span>))}
       </div>
 
+      {/* 🔢 ช่องแสดงตัวเลขวันในเดือน */}
       <div className="grid grid-cols-7 gap-1 text-center mb-4">
         {Array.from({ length: firstDayIndex }).map((_, i) => (<div key={`empty-${i}`} />))}
         {Array.from({ length: totalDays }).map((_, i) => {
@@ -189,7 +196,7 @@ export const CalendarContent = ({
 
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const isHoliday = publicHolidays.includes(dateString);
-          const isDisabled = isWeekend || isHoliday;
+          const isDisabled = isWeekend || isHoliday; // ปิดการเลือกวันเสาร์-อาทิตย์และวันหยุด
           const isSelected = dayNum === selectedDay;
 
           return (
@@ -212,6 +219,7 @@ export const CalendarContent = ({
         })}
       </div>
 
+      {/* ⏰ ปุ่มเลือกเวลาด้านล่างปฏิทิน */}
       {!hideTimePicker && (
         <div className="border-t border-slate-100 pt-3 mb-4">
           <button
@@ -232,6 +240,7 @@ export const CalendarContent = ({
         </div>
       )}
 
+      {/* ✓ ปุ่มตกลงยืนยันการเลือก */}
       <div className="pt-3 border-t border-slate-100 flex justify-end">
         <button
           type="button"

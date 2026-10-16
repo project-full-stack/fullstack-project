@@ -14,7 +14,7 @@ interface BookingItem {
   studentId: string;
   status: string;
   bookingDate: string;
-  endTime: string; // ✅ เพิ่มรองรับเวลาสิ้นสุด
+  endTime: string; // รองรับเวลาสิ้นสุด
 }
 
 export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
@@ -24,6 +24,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // 🔍 ฟังก์ชันค้นหาประวัติการจองด้วยรหัสนักศึกษา
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -60,6 +61,8 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
+      
+      {/* 📋 กล่องฟอร์มค้นหาประวัติการจอง */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6">
         <h2 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2.5">
           <img src="/images/search.png" alt="Search" className="w-5 h-5 object-contain" />
@@ -91,6 +94,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
             </button>
           </div>
           
+          {/* ข้อความแจ้งเตือน Error เมื่อกรอกรหัสไม่ถูกต้อง */}
           {errorMsg && (
             <p className="text-rose-500 text-xs font-medium mt-1 px-1 flex items-center gap-1.5">
               <img src="/images/warning.png" alt="Warning" className="w-4 h-4 object-contain" />
@@ -100,6 +104,7 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
         </form>
       </div>
 
+      {/* 📊 ส่วนแสดงผลลัพธ์การค้นหา */}
       {searched && !errorMsg && (
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2.5">
@@ -143,6 +148,8 @@ export const MyBookings: React.FC<MyBookingsProps> = ({ lang, apiUrl }) => {
                         </span>
                       </p>
                     </div>
+
+                    {/* ป้ายแสดงสถานะการจอง */}
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       item.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                       item.status === 'rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :

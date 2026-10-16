@@ -7,12 +7,14 @@ interface TrackingDashboardProps {
 }
 
 export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiUrl }) => {
+  // 📑 แท็บย่อยสำหรับสลับดูระหว่างการใช้ห้อง (Rooms) และการยืมอุปกรณ์ (Equipment)
   const [subTab, setSubTab] = useState<'rooms' | 'equipment'>('rooms');
   const [bookings, setBookings] = useState<any[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
+  // 📥 ฟังก์ชันดึงข้อมูลการจองและทรัพยากรทั้งหมดพร้อมกัน
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -34,6 +36,7 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
     fetchData();
   }, [apiUrl]);
 
+  // ✉️ ฟังก์ชันส่งอีเมลทวงคืนอุปกรณ์สำหรับรายการที่กำลังยืมอยู่ (Borrowed)
   const handleSendReminder = async (bookingId: number) => {
     setActionLoadingId(bookingId);
     try {
@@ -54,27 +57,34 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
     }
   };
 
+  // 🗺️ Map ข้อมูลทรัพยากรเพื่อให้ค้นหาด้วย ID ได้สะดวกรวดเร็ว
   const resourceMap = new Map(resources.map((r) => [r.id, r]));
 
+  // 🔍 กรองเฉพาะรายการที่ได้รับการอนุมัติแล้ว หรือกำลังยืมอยู่ (Active Bookings)
   const activeBookings = bookings.filter(
     (b) => b.status === 'approved' || b.status === 'borrowed'
   );
 
+  // 🏢 แยกรายการสำหรับห้องประชุม/แล็บ
   const roomBookings = activeBookings.filter((b) => {
     const res = resourceMap.get(b.resourceId);
     return res?.type === 'room';
   });
 
+  // 💻 แยกรายการสำหรับอุปกรณ์
   const equipmentBookings = activeBookings.filter((b) => {
     const res = resourceMap.get(b.resourceId);
     return res?.type === 'equipment';
   });
 
+  // 📋 รายการที่จะแสดงผลในตารางตามแท็บย่อยที่เลือก
   const currentList = subTab === 'rooms' ? roomBookings : equipmentBookings;
 
   return (
     <main className="max-w-7xl mx-auto p-6 md:p-10">
       <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200">
+        
+        {/* ส่วนหัวหน้าจอและปุ่มสลับแท็บย่อย */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-slate-100">
           <div>
             <h2 className="text-lg font-bold text-[#1A237E]">
@@ -113,6 +123,7 @@ export const TrackingDashboard: React.FC<TrackingDashboardProps> = ({ lang, apiU
           </div>
         </div>
 
+        {/* แสดงผลตารางหรือข้อความแจ้งเตือนเมื่อไม่มีข้อมูล */}
         {loading ? (
           <div className="text-center py-16 text-slate-400 text-sm">
             {lang === 'th' ? 'กำลังโหลดข้อมูล...' : 'Loading tracking data...'}

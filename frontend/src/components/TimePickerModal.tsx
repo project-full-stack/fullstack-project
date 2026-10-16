@@ -22,8 +22,10 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   setStartTime,
   setEndTime,
 }) => {
+  // 🚪 หาก modal ยังไม่เปิด ให้ซ่อนคอมโพเนนต์
   if (!isOpen) return null;
 
+  // ⏰ รายการช่วงเวลาที่เปิดให้เลือกจอง (ตั้งแต่ 08:00 ถึง 17:00)
   const timeSlots = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
     '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', 
@@ -33,6 +35,8 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/25 flex justify-center items-center p-4 z-50 backdrop-blur-[2px]">
       <div className="bg-white rounded-3xl p-6 shadow-2xl relative animate-in fade-in zoom-in transition-all duration-300 ease-in-out w-full md:max-w-185">
+        
+        {/* ส่วนหัว Modal (ชื่อหัวข้อและปุ่มปิด) */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-base font-bold text-[#1A237E] flex items-center gap-2">
             <img src="/images/clock.png" alt="Clock" className="w-4 h-4 object-contain" />
@@ -43,15 +47,15 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg cursor-pointer flex items-center justify-center"
           >
-            {/* ปรับขนาดไอคอน close.png ให้เล็กลงเหลือ w-3 h-3 */}
+            {/* ✕ ปุ่มปิดด้วยไอคอน close.png ขนาดเล็ก */}
             <img src="/images/close.png" alt="Close" className="w-3 h-3 object-contain" />
           </button>
         </div>
 
-        {/* จัดวางเป็น 2 คอลัมน์ซ้ายขวา */}
+        {/* 📅 ส่วนเลือกเวลาแบบ 2 คอลัมน์ (ซ้าย: เวลาเริ่มต้น / ขวา: เวลาสิ้นสุด) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           
-          {/* ฝั่งซ้าย: เวลาเริ่มต้น */}
+          {/* ฝั่งซ้าย: เวลาเริ่มต้น (Start Time) */}
           <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             <p className="text-xs font-semibold text-slate-600 mb-3">
               {lang === 'th' ? 'เวลาเริ่มต้น' : 'Start Time'}
@@ -65,6 +69,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                     type="button"
                     onClick={() => {
                       setStartTime(time);
+                      // หากเวลาสิ้นสุดน้อยกว่าหรือเท่ากับเวลาเริ่มต้นใหม่ ให้ขยับเวลาสิ้นสุดอัตโนมัติ
                       if (endTime <= time) {
                         const idx = timeSlots.indexOf(time);
                         if (idx < timeSlots.length - 1) setEndTime(timeSlots[idx + 1]);
@@ -83,7 +88,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
             </div>
           </div>
 
-          {/* ฝั่งขวา: เวลาสิ้นสุด */}
+          {/* ฝั่งขวา: เวลาสิ้นสุด (End Time) */}
           <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             <p className="text-xs font-semibold text-slate-600 mb-3">
               {lang === 'th' ? 'เวลาสิ้นสุด' : 'End Time'}
@@ -91,6 +96,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
             <div className="grid grid-cols-4 gap-2">
               {timeSlots.map((time) => {
                 const isSelected = time === endTime;
+                // ปิดการใช้งานปุ่มเวลาสิ้นสุดที่น้อยกว่าหรือเท่ากับเวลาเริ่มต้น
                 const isDisabled = time <= startTime;
                 return (
                   <button
@@ -115,7 +121,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
 
         </div>
 
-        {/* ปุ่มยืนยันเวลา */}
+        {/* ส่วนปุ่มยืนยันเวลาด้านล่าง */}
         <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <button
             type="button"
