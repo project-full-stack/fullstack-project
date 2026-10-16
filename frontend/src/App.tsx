@@ -13,7 +13,7 @@ import { HistoryView } from './components/HistoryView';
 
 export default function App() {
   // 🔗 API Endpoint สำหรับกลุ่ม 3: ปรับให้วิ่งตรงไปที่พอร์ต Backend ของกลุ่ม 3 อัตโนมัติ (เช่น พอร์ต 8003 หรือปรับตามจริง)
-  const API_URL = 'https://fsg03.cpecmu.com';
+  const API_URL = '/api';
   
   // 🌐 จัดการภาษาของแอปพลิเคชัน (รองรับ TH / EN)
   const [lang, setLang] = useState<Language>(() => {

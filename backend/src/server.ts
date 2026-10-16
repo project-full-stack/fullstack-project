@@ -17,9 +17,9 @@ app.use(express.json());
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'nweeranoi@gmail.com', 
-    pass: process.env.EMAIL_PASS || 'qwytggggjofgasoh'    
-  }
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 // ✉️ ฟังก์ชันสำหรับส่งอีเมลแจ้งเตือนรองรับทุกสถานะ (แยกภาษา TH / EN และประเภททรัพยากร)
