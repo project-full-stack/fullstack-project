@@ -12,8 +12,8 @@ import { TrackingDashboard } from './components/TrackingDashboard';
 import { HistoryView } from './components/HistoryView';
 
 export default function App() {
-  // 🔗 API Endpoint สำหรับเชื่อมต่อ Backend (สำหรับกลุ่ม 3 สามารถปรับเปลี่ยน URL/Port ตามจริงตอน Deploy)
-  const API_URL = 'http://localhost:8000';
+  // 🔗 API Endpoint สำหรับกลุ่ม 3: ปรับให้วิ่งตรงไปที่พอร์ต Backend ของกลุ่ม 3 อัตโนมัติ (เช่น พอร์ต 8003 หรือปรับตามจริง)
+  const API_URL = `${window.location.protocol}//${window.location.hostname}:8003`;
   
   // 🌐 จัดการภาษาของแอปพลิเคชัน (รองรับ TH / EN)
   const [lang, setLang] = useState<Language>(() => {
@@ -66,7 +66,7 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setIsOnline(data.ok))
       .catch(() => setIsOnline(false));
-  }, []);
+  }, [API_URL]);
 
   // ⚡ จัดการ Action พิเศษผ่าน URL Query (เช่น การสแกน QR เพื่อรับอุปกรณ์)
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function App() {
           alert(lang === 'th' ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ' : 'Connection error');
         });
     }
-  }, []);
+  }, [API_URL, lang]);
 
   // 📥 ฟังก์ชันดึงข้อมูลทรัพยากรจาก Backend
   const fetchResources = () => {
@@ -259,7 +259,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/40 z-50 flex justify-end backdrop-blur-xs transition-opacity animate-in fade-in">
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-6 animate-in slide-in-from-right duration-300 overflow-hidden">
             
-            {/* ส่วนหัว Sidebar (ตรึงไว้ด้านบน ไม่เลื่อนตาม) */}
+            {/* ส่วนหัว Sidebar */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
@@ -275,11 +275,11 @@ export default function App() {
                 onClick={() => setStatusDrawerResource(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
               >
-                <img src="/images/close.png" alt="Close" className="w-4 h-4 object-contain" />
+                ✕
               </button>
             </div>
 
-            {/* ส่วนเนื้อหาภายใน (ให้เลื่อน Scrollbar เฉพาะพื้นที่ตรงนี้) */}
+            {/* ส่วนเนื้อหาภายใน */}
             <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
               {bookings.filter(b => String(b.resourceId) === String(statusDrawerResource.id) && b.status !== 'returned' && b.status !== 'rejected').length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs">
@@ -312,9 +312,6 @@ export default function App() {
                         </div>
                         <div className="text-xs text-slate-600 space-y-0.5">
                           <div>{lang === 'th' ? 'วันที่ใช้งาน: ' : 'Date: '}{dateStr}</div>
-                          {b.endTime && b.endTime !== 'Pickup at Counter' && (
-                            <div>{lang === 'th' ? `${dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${b.endTime} น.` : `${dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })} - ${b.endTime}`}</div>
-                          )}
                         </div>
                       </div>
                     );
@@ -338,7 +335,7 @@ export default function App() {
         }} 
       />
 
-      {/* Modal QR Code สำหรับแอดมินใช้ตรวจสอบและเปลี่ยนสถานะ */}
+      {/* Modal QR Code สำหรับแอดมิน */}
       <QRCodeModal
         isOpen={!!selectedQRResource}
         onClose={() => setSelectedQRResource(null)}

@@ -5,13 +5,44 @@ services:
     image: postgres:15-alpine
     container_name: fullstackG3_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_USER: g03
+      POSTGRES_PASSWORD: g03fs69
       POSTGRES_DB: reserve_db
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - g03-net
+
+  backend:
+    build: ./backend
+    container_name: fullstackG3_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgres://g03:g03fs69@postgres:5432/reserve_db
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      - postgres
+    networks:
+      - g03-net
+
+  frontend:
+    build: ./frontend
+    container_name: fullstackG3_frontend
+    restart: always
+    ports:
+      - "6003:80"
+    depends_on:
+      - backend
+    networks:
+      - g03-net
 
 volumes:
   pgdata:
+
+networks:
+  g03-net:
+    driver: bridge
